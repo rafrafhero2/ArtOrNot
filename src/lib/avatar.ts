@@ -69,15 +69,52 @@ export function randomAvatar(): Avatar {
 }
 
 const KEY = "artornot.profile.v1";
-export type Profile = { nickname: string; avatar: Avatar };
+
+export type Profile = { 
+  nickname: string; 
+  avatar: Avatar;
+  credits: number;
+  unlockedHats: string[];
+  unlockedColors: string[];
+  isPremium?: boolean;
+};
+
+export const INITIAL_CREDITS = 100;
+export const WIN_CREDITS = 50;
+
+export const COSTS = {
+  HAT: 150,
+  COLOR: 50,
+  FACE: 200,
+};
+
+export const DEFAULT_PROFILE: Profile = {
+  nickname: randomNickname(),
+  avatar: randomAvatar(),
+  credits: INITIAL_CREDITS,
+  unlockedHats: ["", "party", "cap", "beanie"],
+  unlockedColors: [
+    ...AVATAR_BG_COLORS.slice(0, 5),
+    ...AVATAR_BODY_COLORS.slice(0, 5),
+    ...AVATAR_ACCENT_COLORS.slice(0, 5),
+    ...AVATAR_EYE_COLORS.slice(0, 5),
+  ],
+};
 
 export function loadProfile(): Profile | null {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+    const p = JSON.parse(raw);
+    // Migration: ensure new fields exist
+    return {
+      ...DEFAULT_PROFILE,
+      ...p,
+      avatar: { ...DEFAULT_PROFILE.avatar, ...p.avatar }
+    };
   } catch { return null; }
 }
+
 export function saveProfile(p: Profile) {
   localStorage.setItem(KEY, JSON.stringify(p));
 }

@@ -1,6 +1,16 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, signInAnonymously, onAuthStateChanged, type User } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { 
+  getAuth, 
+  signInAnonymously, 
+  onAuthStateChanged, 
+  type User, 
+  GoogleAuthProvider, 
+  signInWithPopup,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut
+} from "firebase/auth";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
 import { getDatabase } from "firebase/database";
 
 const firebaseConfig = {
@@ -18,21 +28,55 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const rtdb = getDatabase(app);
 
+const googleProvider = new GoogleAuthProvider();
+
+export async function signInWithGoogle() {
+  const res = await signInWithPopup(auth, googleProvider);
+  return res.user;
+}
+
+export async function logout() {
+  await signOut(auth);
+  window.location.reload();
+}
+
+export async function getCloudProfile(uid: string) {
+  const snap = await getDoc(doc(db, "users", uid));
+  if (snap.exists()) return snap.data();
+  return null;
+}
+
+export async function saveCloudProfile(uid: string, data: any) {
+  await setDoc(doc(db, "users", uid), data, { merge: true });
+}
+
+export async function addCredits(uid: string, amount: number) {
+  await updateDoc(doc(db, "users", uid), {
+    credits: increment(amount)
+  });
+}
+
 let currentUser: User | null = null;
 const waiters: ((u: User) => void)[] = [];
 
 onAuthStateChanged(auth, (u) => {
+  currentUser = u;
   if (u) {
-    currentUser = u;
     waiters.splice(0).forEach((w) => w(u));
   }
 });
 
 export async function ensureAuth(): Promise<User> {
   if (currentUser) return currentUser;
-  if (!auth.currentUser) {
-    try { await signInAnonymously(auth); } catch (e) { console.error("anon auth", e); }
-  }
   if (auth.currentUser) { currentUser = auth.currentUser; return currentUser; }
-  return new Promise((resolve) => waiters.push(resolve));
+  return new Promise((resolve) => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u) {
+        unsub();
+        resolve(u);
+      } else {
+        signInAnonymously(auth).catch(console.error);
+      }
+    });
+  });
 }

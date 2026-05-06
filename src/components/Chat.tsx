@@ -20,9 +20,10 @@ export default function Chat({
   useEffect(() => { scrollRef.current?.scrollTo({ top: 1e9, behavior: "smooth" }); }, [msgs.length]);
 
   const send = async () => {
-    if (!text.trim() || disabled) return;
-    await sendChat(code, { uid, nickname, avatar, text: text.trim().slice(0, 240) });
+    const val = text.trim();
+    if (!val || disabled) return;
     setText("");
+    await sendChat(code, { uid, nickname, avatar, text: val.slice(0, 240) });
   };
 
   return (
@@ -48,17 +49,36 @@ export default function Chat({
         </AnimatePresence>
       </div>
       <div className="border-t border-white/[0.06] p-3 relative">
-        {showEmoji && (
-          <div className="absolute bottom-full left-3 mb-2 p-2 rounded-2xl glass grid grid-cols-10 gap-1 max-w-xs z-10">
-            {EMOJIS.map((e) => (
-              <button key={e} onClick={() => { setText((t) => t + e); setShowEmoji(false); }} className="text-lg hover:bg-white/10 rounded-md w-7 h-7">{e}</button>
-            ))}
-          </div>
-        )}
+        <AnimatePresence>
+          {showEmoji && (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute bottom-full left-3 mb-2 p-2 rounded-2xl glass grid grid-cols-10 gap-1 max-w-xs z-10 shadow-2xl border border-white/10 will-change-transform"
+            >
+              {EMOJIS.map((e) => (
+                <button 
+                  key={e} 
+                  onClick={() => { setText((t) => t + e); setShowEmoji(false); }} 
+                  className="text-lg hover:bg-white/10 rounded-lg w-7 h-7 flex items-center justify-center transition-colors"
+                >
+                  {e}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowEmoji((v) => !v)} className="text-muted-foreground hover:text-foreground p-1.5">
+          <motion.button 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setShowEmoji((v) => !v)} 
+            className="text-muted-foreground hover:text-foreground p-1.5"
+          >
             <Smile size={18}/>
-          </button>
+          </motion.button>
           <input
             value={text} onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}

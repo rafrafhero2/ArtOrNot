@@ -11,6 +11,8 @@ import Join from "./pages/Join";
 import Room from "./pages/Room";
 import NotFound from "./pages/NotFound";
 
+import CustomCursor from "@/components/CustomCursor";
+
 const queryClient = new QueryClient();
 
 const pageTransition = {
@@ -45,6 +47,7 @@ function AnimatedRoutes() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <CustomCursor />
       <Toaster />
       <Sonner />
       <BrowserRouter>

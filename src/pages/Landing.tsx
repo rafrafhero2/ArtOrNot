@@ -1,27 +1,43 @@
-import { useRef, useEffect, useCallback } from "react";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useRef, useEffect, useCallback, useState } from "react";
+import { motion, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { useNavigate, Link } from "react-router-dom";
 import * as LucideIcons from "lucide-react";
 import { CHARACTER_MAP } from "@/components/AvatarCharacters";
+import { useProfile } from "@/hooks/useProfile";
+import AuthModal from "@/components/AuthModal";
+import { logout } from "@/lib/firebase";
 
 // ═══════════════════════════════════════
 // ANIMATION VARIANTS
 // ═══════════════════════════════════════
 
-const springTransition = { duration: 0.35, ease: [0.16, 1, 0.3, 1] as const };
+const springTransition = { duration: 0.8, ease: [0.16, 1, 0.3, 1] };
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
+  hidden: { opacity: 0, y: 30, scale: 0.98 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { ...springTransition, delay: i * 0.08 },
+    scale: 1,
+    transition: { ...springTransition, delay: i * 0.12 },
   }),
+};
+
+const brushStroke = {
+  hidden: { pathLength: 0, opacity: 0 },
+  visible: {
+    pathLength: 1,
+    opacity: 1,
+    transition: { 
+      pathLength: { duration: 1.5, delay: 0.8, ease: "easeInOut" },
+      opacity: { duration: 0.4, delay: 0.8 }
+    }
+  }
 };
 
 const stagger = {
   visible: {
-    transition: { delayChildren: 0.1, staggerChildren: 0.08 },
+    transition: { delayChildren: 0.1, staggerChildren: 0.12 },
   },
 };
 
@@ -136,10 +152,13 @@ function BackgroundCanvas() {
   }, [draw]);
 
   return (
-    <canvas
+    <motion.canvas
       ref={canvasRef}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 0.8 }}
+      transition={{ duration: 2 }}
       className="absolute inset-0 w-full h-full pointer-events-none"
-      style={{ opacity: 0.8 }}
+      style={{ filter: "blur(0.5px)" }}
     />
   );
 }
@@ -237,7 +256,7 @@ function Hero() {
   const scale = useTransform(scrollY, [0, 400], [1, 0.9]);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-20">
       <BackgroundCanvas />
 
       {/* Radial glow */}
@@ -245,31 +264,32 @@ function Hero() {
 
       <motion.div
         style={{ opacity, scale }}
-        className="relative z-10 text-center px-6 max-w-4xl mx-auto"
+        className="relative z-10 text-center px-6 max-w-5xl mx-auto"
         variants={stagger}
         initial="hidden"
-        animate="visible"
+        whileInView="visible"
+        viewport={{ once: true }}
       >
         <motion.h1
           custom={0}
           variants={fadeUp}
-          className="font-heading text-[clamp(48px,8vw,100px)] font-bold leading-[1.05] tracking-tight mb-6"
+          className="font-heading text-[clamp(48px,9vw,110px)] font-bold leading-[0.95] tracking-tight mb-8"
         >
           One of you is{" "}
-          <span className="relative inline-block">
-            <span className="text-[#E8FF47]">lying</span>
+          <span className="relative inline-block px-2">
+            <span className="text-[#E8FF47] drop-shadow-[0_0_20px_rgba(232,255,71,0.15)]">lying</span>
             <svg
-              className="absolute -bottom-2 left-0 w-full"
+              className="absolute -bottom-2 left-0 w-full overflow-visible"
               viewBox="0 0 200 12"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <path
+              <motion.path
                 d="M2 8C30 2 70 2 100 6C130 10 170 10 198 4"
                 stroke="#E8FF47"
-                strokeWidth="3"
+                strokeWidth="4"
                 strokeLinecap="round"
-                className="animate-draw"
+                variants={brushStroke}
               />
             </svg>
           </span>
@@ -279,32 +299,36 @@ function Hero() {
         <motion.p
           custom={1}
           variants={fadeUp}
-          className="text-[#888880] text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
+          className="text-[#888880] text-lg md:text-2xl max-w-3xl mx-auto mb-12 leading-relaxed font-medium"
         >
-          A drawing game where one player fakes it. Everyone draws.
+          A high-stakes drawing party game where suspicion is the main brushstroke.
           <br className="hidden md:block" />
-          Only one doesn't know what.
+          Everyone draws. Only one doesn't know what.
         </motion.p>
 
         <motion.div
           custom={2}
           variants={fadeUp}
-          className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+          className="flex flex-col sm:flex-row gap-6 justify-center items-center"
         >
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05, y: -4 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate("/me?next=/create")}
-            className="btn-primary text-lg px-10 py-4 min-w-[200px]"
+            className="btn-primary text-xl px-12 py-5 min-w-[240px] shadow-[0_20px_40px_rgba(232,255,71,0.15)]"
             id="cta-create-room"
           >
             Create a room
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05, y: -4, backgroundColor: "rgba(255,255,255,0.05)" }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => navigate("/me?next=/join")}
-            className="btn-ghost text-lg px-10 py-4 min-w-[200px]"
+            className="btn-ghost text-xl px-12 py-5 min-w-[240px]"
             id="cta-join-room"
           >
             Join a room
-          </button>
+          </motion.button>
         </motion.div>
       </motion.div>
 
@@ -367,9 +391,8 @@ function StepCard({ step, i, scrollProgress }: { step: typeof STEPS[0], i: numbe
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, margin: "-10% 0% -10% 0%" });
   
-  // Component morphing: border-radius and scale changes as you scroll
-  const borderRadius = useTransform(scrollProgress, [0.1 * i, 0.2 * i + 0.2], ["16px", "40px"]);
-  const rotate = useTransform(scrollProgress, [0.1 * i, 0.2 * i + 0.2], [0, i % 2 === 0 ? 2 : -2]);
+  const borderRadius = useTransform(scrollProgress, [0.1 * i, 0.2 * i + 0.2], ["24px", "48px"]);
+  const rotate = useTransform(scrollProgress, [0.1 * i, 0.2 * i + 0.2], [0, i % 2 === 0 ? 1 : -1]);
 
   return (
     <motion.div
@@ -377,21 +400,22 @@ function StepCard({ step, i, scrollProgress }: { step: typeof STEPS[0], i: numbe
       style={{ borderRadius, rotate }}
       variants={fadeUp}
       custom={i + 2}
-      className="card group relative overflow-hidden hover:border-[rgba(255,255,255,0.15)] transition-all duration-300"
+      whileHover={{ y: -8, transition: { duration: 0.3 } }}
+      className="card group relative overflow-hidden bg-[#161616] border border-white/5 hover:border-primary/30 transition-all duration-300 p-8"
     >
       {/* Accent number badge */}
-      <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#E8FF47] text-[#0D0D0D] font-mono font-bold text-sm mb-6">
+      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary text-[#0D0D0D] font-mono font-bold text-lg mb-8 shadow-[0_0_20px_rgba(232,255,71,0.2)]">
         {step.num}
       </div>
 
       {/* Icon */}
-      <div className="text-5xl mb-4">{step.icon}</div>
+      <div className="text-5xl mb-6 transform group-hover:scale-110 transition-transform duration-500">{step.icon}</div>
 
-      <h3 className="font-heading text-xl font-bold mb-2">{step.title}</h3>
-      <p className="text-[#888880] text-sm leading-relaxed">{step.desc}</p>
+      <h3 className="font-heading text-2xl font-bold mb-3">{step.title}</h3>
+      <p className="text-[#888880] text-base leading-relaxed">{step.desc}</p>
 
       {/* Hover glow */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,rgba(232,255,71,0.05)_0%,transparent_60%)]" />
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,rgba(232,255,71,0.08)_0%,transparent_60%)]" />
     </motion.div>
   );
 }
@@ -473,11 +497,6 @@ function FeatureCard({
   index: number;
 }) {
   const ref = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"]
-  });
-  
   const cardRef = useRef<HTMLDivElement>(null);
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -486,46 +505,50 @@ function FeatureCard({
     const rect = card.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
-    card.style.transform = `perspective(800px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg) scale(1.02)`;
+    card.style.transform = `perspective(1000px) rotateY(${x * 12}deg) rotateX(${-y * 12}deg) scale3d(1.02, 1.02, 1.02)`;
   };
 
   const handleMouseLeave = () => {
     if (cardRef.current) {
-      cardRef.current.style.transform = "perspective(800px) rotateY(0deg) rotateX(0deg) scale(1)";
+      cardRef.current.style.transform = "perspective(1000px) rotateY(0deg) rotateX(0deg) scale3d(1, 1, 1)";
     }
   };
-
-  // Morph feature cards: scale and border radius pulse with scroll
-  const scale = useTransform(scrollYProgress, [0.3, 0.5, 0.7], [0.95, 1, 0.95]);
-  const borderRadius = useTransform(scrollYProgress, [0.3, 0.5, 0.7], ["16px", "32px", "16px"]);
 
   return (
     <motion.div
       ref={ref}
-      style={{ scale, borderRadius }}
       custom={index}
       variants={fadeUp}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, margin: "-80px" }}
+      viewport={{ once: true, margin: "-100px" }}
+      className="h-full"
     >
       <div
         ref={cardRef}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className="card h-full flex flex-col items-center text-center p-8 group transition-transform duration-200"
+        className="card h-full flex flex-col items-center text-center p-10 group transition-all duration-300 ease-out bg-[#161616] border border-white/5 hover:border-primary/20"
         style={{ transformStyle: "preserve-3d", willChange: "transform" }}
       >
         {/* Feature preview area */}
-        <div className="w-full h-48 rounded-xl bg-[#0D0D0D] border border-[rgba(255,255,255,0.05)] mb-6 flex items-center justify-center overflow-hidden relative">
+        <div 
+          className="w-full h-56 rounded-2xl bg-[#0D0D0D] border border-white/5 mb-8 flex items-center justify-center overflow-hidden relative shadow-inner"
+          style={{ transform: "translateZ(30px)" }}
+        >
           {feature.preview === "avatar" && <AvatarPreview />}
           {feature.preview === "canvas" && <CanvasPreview />}
           {feature.preview === "chat" && <ChatPreview />}
         </div>
 
-        <div className="mb-4">{feature.icon}</div>
-        <h3 className="font-heading text-2xl font-bold mb-3">{feature.title}</h3>
-        <p className="text-[#888880] leading-relaxed">{feature.desc}</p>
+        <div className="mb-6 transform group-hover:scale-110 transition-transform duration-500" style={{ transform: "translateZ(50px)" }}>
+          {feature.icon}
+        </div>
+        <h3 className="font-heading text-2xl font-bold mb-4" style={{ transform: "translateZ(40px)" }}>{feature.title}</h3>
+        <p className="text-[#888880] text-lg leading-relaxed" style={{ transform: "translateZ(20px)" }}>{feature.desc}</p>
+        
+        {/* Hover glow */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[radial-gradient(circle_at_50%_100%,rgba(232,255,71,0.03)_0%,transparent_70%)]" />
       </div>
     </motion.div>
   );
@@ -731,14 +754,86 @@ function ParallaxDivider() {
 }
 
 // ═══════════════════════════════════════
+// NAVBAR
+// ═══════════════════════════════════════
+
+function LandingNavbar() {
+  const { profile, user } = useProfile();
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <>
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-6 py-4 ${isScrolled ? "bg-[#0D0D0D]/80 backdrop-blur-lg border-b border-white/5 py-3" : "bg-transparent"}`}>
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center rotate-3 group-hover:rotate-12 transition-transform">
+              <LucideIcons.Pencil size={18} className="text-[#0D0D0D]" />
+            </div>
+            <span className="font-heading text-xl font-bold tracking-tight">
+              Art<span className="text-primary">Or</span>Not
+            </span>
+          </Link>
+
+          <div className="flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#888880]">
+              <a href="#how-it-works" className="hover:text-white transition-colors">How it works</a>
+              <a href="#features" className="hover:text-white transition-colors">Features</a>
+            </div>
+
+            <div className="h-4 w-[1px] bg-white/10 hidden md:block" />
+
+            <div className="flex items-center gap-4">
+              {user && !user.isAnonymous ? (
+                <div className="flex items-center gap-4">
+                  <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
+                    <LucideIcons.Coins size={14} className="text-primary" />
+                    <span className="font-mono text-sm font-bold">{profile.credits}</span>
+                  </div>
+                  <button 
+                    onClick={() => logout()} 
+                    className="flex items-center gap-2 text-sm font-medium text-[#888880] hover:text-white transition-colors"
+                  >
+                    <LucideIcons.LogOut size={16} />
+                    <span className="hidden sm:inline">Sign Out</span>
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setIsAuthOpen(true)}
+                  className="flex items-center gap-2 bg-white text-[#0D0D0D] px-5 py-2 rounded-full font-bold text-sm hover:bg-primary transition-all active:scale-95 shadow-lg"
+                >
+                  <LucideIcons.User size={16} />
+                  Sign In
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════
 // MAIN LANDING PAGE
 // ═══════════════════════════════════════
 
 export default function Landing() {
   return (
     <main className="min-h-screen bg-[#0D0D0D] relative">
+      <LandingNavbar />
       <ScrollControlledStrokes />
-      <Hero />
+      <div className="pt-20">
+        <Hero />
+      </div>
       <ParallaxDivider />
       <HowItWorks />
       <Features />
