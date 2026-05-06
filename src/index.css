@@ -1,6 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ═══════════════════════════════════════
+   CLASH DISPLAY FONT (CDN)
+   ═══════════════════════════════════════ */
+@font-face {
+  font-family: 'Clash Display';
+  src: url('https://api.fontshare.com/v2/css?f[]=clash-display@600,700&display=swap') format('woff2');
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 @layer base {
   :root {
@@ -57,13 +69,14 @@
   html, body, #root {
     @apply bg-background text-foreground;
     min-height: 100%;
+    scroll-behavior: smooth;
   }
   body {
     font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g transform='rotate(-30 14 14)'><rect x='12' y='2' width='4' height='12' rx='1' fill='%23E8FF47' stroke='%230D0D0D' stroke-width='1.2'/><rect x='11' y='13' width='6' height='4' rx='1' fill='%23222' stroke='%230D0D0D' stroke-width='1.2'/><path d='M11 17 L14 26 L17 17 Z' fill='%23F5F5F0' stroke='%230D0D0D' stroke-width='1.2'/></g></svg>") 4 4, auto;
   }
-  h1, h2, h3, h4, .font-display {
+  h1, h2, h3, h4, .font-heading {
     font-family: 'Clash Display', 'Cabinet Grotesk', 'Bricolage Grotesque', sans-serif;
     letter-spacing: -0.02em;
   }
@@ -83,10 +96,13 @@
     @apply rounded-full px-5 py-2.5 font-medium transition-all duration-200;
   }
   .btn-primary {
-    @apply pill bg-primary text-primary-foreground hover:shadow-[0_0_40px_-5px_hsl(var(--primary)/0.6)] active:scale-[0.97];
+    @apply pill bg-primary text-primary-foreground font-semibold hover:scale-[1.03] hover:shadow-[0_0_30px_rgba(232,255,71,0.3)] active:scale-[0.97] border-none;
   }
   .btn-ghost {
-    @apply pill border border-white/15 text-foreground hover:bg-white/5 hover:border-white/30 active:scale-[0.97];
+    @apply pill border border-white/20 text-foreground font-semibold hover:border-white/50 hover:scale-[1.03] active:scale-[0.97] bg-transparent;
+  }
+  .card {
+    @apply rounded-2xl bg-card border border-white/[0.06] p-6;
   }
   .card-surface {
     @apply rounded-2xl bg-card border border-white/[0.06];
@@ -106,6 +122,31 @@
 }
 
 /* scrollbar */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: hsl(var(--surface)); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+/* Animations */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(232, 255, 71, 0.4); }
+  70% { box-shadow: 0 0 0 12px rgba(232, 255, 71, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(232, 255, 71, 0); }
+}
+.animate-pulse-ring { animation: pulse-ring 2s ease-out infinite; }
+
+@keyframes draw-stroke {
+  from { stroke-dashoffset: 1000; }
+  to { stroke-dashoffset: 0; }
+}
+.animate-draw {
+  stroke-dasharray: 1000;
+  animation: draw-stroke 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+.animate-bounce-soft { animation: bounce-soft 2s ease-in-out infinite; }
+
