@@ -2,104 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 5%;
+    --foreground: 60 11% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --surface: 0 0% 8%;
+    --card: 0 0% 11%;
+    --card-foreground: 60 11% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 60 11% 95%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 68 100% 64%;
+    --primary-foreground: 0 0% 5%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 60 11% 95%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 60 3% 53%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 0 100% 71%;
+    --accent-foreground: 0 0% 5%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 100% 71%;
+    --destructive-foreground: 0 0% 5%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 0 0% 100%;
+    --border-opacity: 0.08;
+    --input: 0 0% 16%;
+    --ring: 68 100% 64%;
 
-    --radius: 0.5rem;
+    --canvas: 53 33% 97%;
 
-    --sidebar-background: 0 0% 98%;
+    --radius: 1rem;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* sidebar (shadcn defaults retained) */
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 60 11% 95%;
+    --sidebar-primary: 68 100% 64%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 11%;
+    --sidebar-accent-foreground: 60 11% 95%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 68 100% 64%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: rgba(255, 255, 255, 0.08);
   }
-
-  body {
+  html, body, #root {
     @apply bg-background text-foreground;
+    min-height: 100%;
+  }
+  body {
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g transform='rotate(-30 14 14)'><rect x='12' y='2' width='4' height='12' rx='1' fill='%23E8FF47' stroke='%230D0D0D' stroke-width='1.2'/><rect x='11' y='13' width='6' height='4' rx='1' fill='%23222' stroke='%230D0D0D' stroke-width='1.2'/><path d='M11 17 L14 26 L17 17 Z' fill='%23F5F5F0' stroke='%230D0D0D' stroke-width='1.2'/></g></svg>") 4 4, auto;
+  }
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Clash Display', 'Cabinet Grotesk', 'Bricolage Grotesque', sans-serif;
+    letter-spacing: -0.02em;
+  }
+  .font-mono, code, kbd {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
   }
 }
+
+@layer components {
+  .glass {
+    background: rgba(20, 20, 20, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .pill {
+    @apply rounded-full px-5 py-2.5 font-medium transition-all duration-200;
+  }
+  .btn-primary {
+    @apply pill bg-primary text-primary-foreground hover:shadow-[0_0_40px_-5px_hsl(var(--primary)/0.6)] active:scale-[0.97];
+  }
+  .btn-ghost {
+    @apply pill border border-white/15 text-foreground hover:bg-white/5 hover:border-white/30 active:scale-[0.97];
+  }
+  .card-surface {
+    @apply rounded-2xl bg-card border border-white/[0.06];
+  }
+  .hairline {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .ease-snappy { transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  .no-cursor { cursor: none; }
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.16); }
