@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag, Clock, ArrowLeft, Tag, Sparkles, TrendingUp } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
+import Lenis from "lenis";
 import { AVATAR_HATS, loadProfile, saveProfile, type Rarity } from "@/lib/avatar";
 import { ArtGem } from "@/components/ArtGem";
 import { toast } from "sonner";
@@ -13,6 +14,21 @@ const PRICES: Record<Rarity, number> = {
   Epic: 500,
   Legendary: 2000,
   Secret: 9999
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.04, duration: 0.5, ease: "easeOut" }
+  }),
+  hover: {
+    y: -10,
+    borderColor: "rgba(255,255,255,0.2)",
+    boxShadow: "0 40px 80px -20px rgba(0,0,0,0.8)",
+    transition: { duration: 0.3, ease: "easeOut" }
+  }
 };
 
 export default function Shop() {
@@ -40,6 +56,22 @@ export default function Shop() {
   };
 
   useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      gestureOrientation: 'vertical',
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      touchMultiplier: 2,
+    });
+
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
     generateShopItems();
     const interval = setInterval(() => {
       const now = new Date();
@@ -50,7 +82,10 @@ export default function Shop() {
       setTimeLeft(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
       if (diff < 1000) generateShopItems();
     }, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      lenis.destroy();
+    };
   }, []);
 
   const buyItem = (item: any) => {
@@ -152,11 +187,12 @@ export default function Shop() {
             return (
               <motion.div
                 key={item.id_key}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                whileHover={{ y: -10 }}
-                className={`group relative flex flex-col bg-gradient-to-b from-white/[0.03] to-transparent rounded-[40px] border border-white/5 p-8 transition-all hover:border-white/20 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] overflow-hidden ${isSecret ? "border-white/30 shadow-[0_0_40px_rgba(255,255,255,0.05)]" : ""}`}
+                custom={i}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                whileHover="hover"
+                className={`group relative flex flex-col bg-gradient-to-b from-white/[0.03] to-transparent rounded-[40px] border border-white/5 p-8 overflow-hidden ${isSecret ? "border-white/30 shadow-[0_0_40px_rgba(255,255,255,0.05)]" : ""}`}
               >
                 {/* Rarity Glow */}
                 <div 

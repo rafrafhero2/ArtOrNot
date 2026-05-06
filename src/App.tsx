@@ -18,7 +18,7 @@ import CustomCursor from "@/components/CustomCursor";
 import { GemGainAnimation } from "@/components/ArtGem";
 import { CrateDrop } from "@/components/CrateDrop";
 import { toast } from "sonner";
-import { loadProfile, saveProfile } from "@/lib/avatar";
+import { useProfile } from "@/hooks/useProfile";
 
 const queryClient = new QueryClient();
 
@@ -56,13 +56,14 @@ function AnimatedRoutes() {
 declare global {
   interface Window {
     testGems: (amount?: number) => void;
-    testCrate: () => void;
+    testCrate: (rarity?: string) => void;
   }
 }
 
 const App = () => {
   const [rewardAmount, setRewardAmount] = useState<number | null>(null);
-  const [showCrate, setShowCrate] = useState(false);
+  const [crateConfig, setCrateConfig] = useState<{ show: boolean, rarity?: any }>({ show: false });
+  const { profile, updateProfile } = useProfile();
 
   useEffect(() => {
     window.testGems = (amount = 50) => {
@@ -70,8 +71,10 @@ const App = () => {
       setTimeout(() => setRewardAmount(null), 3000);
     };
 
-    window.testCrate = () => {
-      setShowCrate(true);
+    window.testCrate = (rarity?: string) => {
+      // rarity can be Common, Rare, Epic, Legendary, Secret
+      const r = rarity ? rarity.charAt(0).toUpperCase() + rarity.slice(1) : undefined;
+      setCrateConfig({ show: true, rarity: r });
     };
   }, []);
 
@@ -82,23 +85,24 @@ const App = () => {
           {rewardAmount !== null && (
             <GemGainAnimation amount={rewardAmount} onComplete={() => setRewardAmount(null)} />
           )}
-          {showCrate && (
-            <CrateDrop onComplete={(reward) => {
-              setShowCrate(false);
-              const p = loadProfile();
-              if (p) {
+          {crateConfig.show && (
+            <CrateDrop 
+              forcedRarity={crateConfig.rarity}
+              onComplete={(reward) => {
+                setCrateConfig({ show: false });
+                const p = { ...profile };
                 if (reward.type === "gems") {
                   p.credits += reward.amount;
                   window.testGems(reward.amount);
                 } else if (reward.type === "hat") {
                   if (!p.unlockedHats.includes(reward.id)) {
-                    p.unlockedHats.push(reward.id);
+                    p.unlockedHats = [...p.unlockedHats, reward.id];
                   }
                   toast.success(`New Hat: ${reward.label}!`);
                 }
-                saveProfile(p);
-              }
-            }} />
+                updateProfile(p);
+              }} 
+            />
           )}
         </AnimatePresence>
         <Toaster />

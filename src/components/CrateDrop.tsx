@@ -110,8 +110,8 @@ function Chest3D({ color, glow, isUpgrading, isSecret, rotation }: { color: stri
   );
 }
 
-export function CrateDrop({ onComplete }: { onComplete: (reward: any) => void }) {
-  const [rarity, setRarity] = useState<Rarity>("Common");
+export function CrateDrop({ onComplete, forcedRarity }: { onComplete: (reward: any) => void, forcedRarity?: Rarity }) {
+  const [rarity, setRarity] = useState<Rarity>(forcedRarity || "Common");
   const [taps, setTaps] = useState(0);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
@@ -119,8 +119,12 @@ export function CrateDrop({ onComplete }: { onComplete: (reward: any) => void })
   const [rotation, setRotation] = useState(0);
   const [shake, setShake] = useState(false);
 
+  useEffect(() => {
+    if (forcedRarity) setRarity(forcedRarity);
+  }, [forcedRarity]);
+
   const handleTap = () => {
-    if (reward || isUpgrading) return;
+    if (reward || isUpgrading || isOpening) return;
     
     // Subtle screen shake
     setShake(true);

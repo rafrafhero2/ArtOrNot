@@ -2,15 +2,53 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Edit2, Check, Lock, Sparkles, User, Palette } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
+import Lenis from "lenis";
 import { loadProfile, saveProfile, AVATAR_HATS, type Profile } from "@/lib/avatar";
 import AvatarView from "@/components/AvatarView";
 import { ThemeBackground } from "@/components/ThemeBackground";
 import { ArtGem } from "@/components/ArtGem";
 
+const itemVariants = {
+  hidden: { opacity: 0, scale: 0.95, y: 10 },
+  visible: (i: number) => ({
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { delay: i * 0.03, duration: 0.5, ease: "easeOut" }
+  }),
+  hover: {
+    y: -8,
+    scale: 1.02,
+    transition: { duration: 0.3, ease: "easeOut" }
+  }
+};
+
 export default function Wardrobe() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(loadProfile());
   const [selectedHat, setSelectedHat] = useState(profile?.avatar.hat || "");
+
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      gestureOrientation: 'vertical',
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      touchMultiplier: 2,
+    });
+
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    return () => {
+      lenis.destroy();
+    };
+  }, []);
 
   const handleEquip = (hatId: string) => {
     if (!profile) return;
@@ -142,16 +180,17 @@ export default function Wardrobe() {
                 return (
                   <motion.div
                     key={hat.id || "none"}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.05 }}
-                    whileHover={isUnlocked ? { y: -8, scale: 1.02 } : {}}
+                    custom={i}
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="visible"
+                    whileHover={isUnlocked ? "hover" : ""}
                     onClick={() => isUnlocked && handleEquip(hat.id)}
-                    className={`group relative flex flex-col items-center p-8 rounded-[32px] border transition-all cursor-pointer overflow-hidden ${
+                    className={`group relative flex flex-col items-center p-8 rounded-[32px] border cursor-pointer overflow-hidden ${
                       isSelected 
                         ? "bg-primary/10 border-primary/50 shadow-[0_20px_40px_-10px_rgba(232,255,71,0.1)]" 
                         : isUnlocked 
-                          ? "bg-white/[0.03] border-white/5 hover:border-white/20 hover:bg-white/[0.06]" 
+                          ? "bg-white/[0.03] border-white/5 hover:bg-white/[0.06]" 
                           : "bg-black/40 border-white/5 opacity-50 grayscale"
                     }`}
                   >

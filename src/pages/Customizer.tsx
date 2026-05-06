@@ -14,6 +14,7 @@ import { ArtGem } from "@/components/ArtGem";
 import { logout } from "@/lib/firebase";
 import { useProfile } from "@/hooks/useProfile";
 import AuthModal from "@/components/AuthModal";
+import AvatarCustomizer from "@/components/AvatarCustomizer";
 import { useToast } from "@/components/ui/use-toast";
 
 const ease = [0.16, 1, 0.3, 1] as const;
