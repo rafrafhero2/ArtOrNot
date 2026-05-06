@@ -49,6 +49,7 @@ export type RoomDoc = {
   accusedUID?: string | null;
   fakeGuess?: string | null;
   winner?: "real" | "fake" | null;
+  countdown?: number | null;
   createdAt?: Timestamp;
 };
 
@@ -135,6 +136,10 @@ export async function kickPlayer(code: string, uid: string) {
 
 export async function updateSettings(code: string, settings: Partial<GameSettings>) {
   await updateDoc(roomRef(code), { settings: { ...defaultSettings, ...settings } as any });
+}
+
+export async function updateCountdown(code: string, countdown: number | null) {
+  await updateDoc(roomRef(code), { countdown } as any);
 }
 
 export async function patchRoom(code: string, patch: Partial<RoomDoc>) {
@@ -288,6 +293,7 @@ export type Stroke = {
   uid: string;
   color: string;
   width: number;
+  tool?: "pen" | "line" | "square" | "circle";
   points: { x: number; y: number }[];
   ts: number;
 };

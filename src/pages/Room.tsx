@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Crown, X, Copy, Check, Play, LogOut, Settings as SettingsIcon,
   ChevronDown, Eraser, Undo2, Timer, Vote as VoteIcon, MessageCircle,
+  Square, Circle, Minus, Pencil
 } from "lucide-react";
 import AvatarView from "@/components/AvatarView";
 import Chat from "@/components/Chat";
@@ -16,7 +17,7 @@ import {
   updateSettings, kickPlayer, leaveRoom, startGame, defaultSettings,
   markRevealReady, beginPlaying, nextTurn, pushStroke, subscribeStrokes,
   castVote, finalizeVote, submitFakeGuess, playAgain, backToLobby,
-  type Stroke, type GameSettings,
+  updateCountdown, type Stroke, type GameSettings,
 } from "@/lib/game";
 import { CATEGORIES } from "@/lib/words";
 
@@ -91,7 +92,6 @@ function Lobby({ code, room, players, uid, isHost }: { code: string; room: RoomD
   const [copied, setCopied] = useState(false);
   const [confirmKick, setConfirmKick] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(true);
-  const [countdown, setCountdown] = useState<number | null>(null);
   const settings = { ...defaultSettings, ...room.settings };
   const profile = loadProfile()!;
 
@@ -106,19 +106,19 @@ function Lobby({ code, room, players, uid, isHost }: { code: string; room: RoomD
   const triggerStart = async () => {
     if (!isHost) return;
     if (players.length < minPlayers) return;
-    setCountdown(3);
+    await updateCountdown(code, 3);
   };
 
   useEffect(() => {
-    if (countdown === null) return;
-    if (countdown === 0) {
+    if (!isHost || room.countdown === null) return;
+    if (room.countdown === 0) {
       startGame(code, players, settings);
-      setCountdown(null);
+      updateCountdown(code, null);
       return;
     }
-    const t = setTimeout(() => setCountdown((c) => (c ?? 1) - 1), 800);
+    const t = setTimeout(() => updateCountdown(code, (room.countdown ?? 1) - 1), 1000);
     return () => clearTimeout(t);
-  }, [countdown]);
+  }, [room.countdown, isHost]);
 
   const slots = Math.max(0, 6 - players.length);
 
@@ -277,18 +277,18 @@ function Lobby({ code, room, players, uid, isHost }: { code: string; room: RoomD
       </div>
 
       <AnimatePresence>
-        {countdown !== null && (
+        {room.countdown !== null && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 grid place-items-center backdrop-blur-md bg-background/70"
           >
             <motion.div
-              key={countdown}
+              key={room.countdown}
               initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.5, opacity: 0 }}
               transition={{ type: "spring", stiffness: 260, damping: 18 }}
               className="font-display font-bold text-[180px] text-primary leading-none"
             >
-              {countdown === 0 ? "GO" : countdown}
+              {room.countdown === 0 ? "GO" : room.countdown}
             </motion.div>
           </motion.div>
         )}
@@ -520,10 +520,11 @@ function CanvasArea({ code, isMyTurn, room, players, uid, isHost }: {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [color, setColor] = useState<string>(STROKE_COLORS[0]);
   const [width, setWidth] = useState<number>(BRUSH_SIZES[1]);
+  const [tool, setTool] = useState<"pen" | "line" | "square" | "circle">("pen");
   const [erasing, setErasing] = useState(false);
   const [size, setSize] = useState({ w: 600, h: 600 });
   const strokesRef = useRef<Stroke[]>([]);
-  const drawingRef = useRef<{ points: { x: number; y: number }[] } | null>(null);
+  const drawingRef = useRef<{ points: { x: number; y: number }[]; tool: string } | null>(null);
   const me = players.find((p) => p.uid === uid);
 
   // assign default color from avatar bg first time
@@ -540,19 +541,15 @@ function CanvasArea({ code, isMyTurn, room, players, uid, isHost }: {
     return () => ro.disconnect();
   }, []);
 
-  const redraw = () => {
-    const c = canvasRef.current; if (!c) return;
-    const ctx = c.getContext("2d")!;
-    ctx.clearRect(0, 0, c.width, c.height);
-    ctx.fillStyle = "#FAFAF5";
-    ctx.fillRect(0, 0, c.width, c.height);
+  const drawOne = (ctx: CanvasRenderingContext2D, s: any, dpr: number) => {
+    const pts = s.points;
+    if (pts.length < 2) return;
+    const t = s.tool || "pen";
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = s.width * dpr;
     ctx.lineCap = "round"; ctx.lineJoin = "round";
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    for (const s of strokesRef.current) {
-      ctx.strokeStyle = s.color;
-      ctx.lineWidth = s.width * dpr;
-      const pts = s.points;
-      if (pts.length < 2) continue;
+
+    if (t === "pen") {
       ctx.beginPath();
       ctx.moveTo(pts[0].x * size.w * dpr, pts[0].y * size.h * dpr);
       for (let i = 1; i < pts.length; i++) {
@@ -562,22 +559,45 @@ function CanvasArea({ code, isMyTurn, room, players, uid, isHost }: {
         ctx.quadraticCurveTo(pp.x * size.w * dpr, pp.y * size.h * dpr, mx, my);
       }
       ctx.stroke();
+    } else if (t === "line") {
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x * size.w * dpr, pts[0].y * size.h * dpr);
+      ctx.lineTo(pts[pts.length - 1].x * size.w * dpr, pts[pts.length - 1].y * size.h * dpr);
+      ctx.stroke();
+    } else if (t === "square") {
+      ctx.beginPath();
+      const x1 = pts[0].x * size.w * dpr;
+      const y1 = pts[0].y * size.h * dpr;
+      const x2 = pts[pts.length - 1].x * size.w * dpr;
+      const y2 = pts[pts.length - 1].y * size.h * dpr;
+      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    } else if (t === "circle") {
+      ctx.beginPath();
+      const x1 = pts[0].x * size.w * dpr;
+      const y1 = pts[0].y * size.h * dpr;
+      const x2 = pts[pts.length - 1].x * size.w * dpr;
+      const y2 = pts[pts.length - 1].y * size.h * dpr;
+      const radius = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+      ctx.arc(x1, y1, radius, 0, Math.PI * 2);
+      ctx.stroke();
     }
+  };
+
+  const redraw = () => {
+    const c = canvasRef.current; if (!c) return;
+    const ctx = c.getContext("2d")!;
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.fillStyle = "#FAFAF5";
+    ctx.fillRect(0, 0, c.width, c.height);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    for (const s of strokesRef.current) drawOne(ctx, s, dpr);
     if (drawingRef.current) {
-      const pts = drawingRef.current.points;
-      ctx.strokeStyle = erasing ? "#FAFAF5" : color;
-      ctx.lineWidth = (erasing ? width * 2 : width) * dpr;
-      if (pts.length >= 2) {
-        ctx.beginPath();
-        ctx.moveTo(pts[0].x * size.w * dpr, pts[0].y * size.h * dpr);
-        for (let i = 1; i < pts.length; i++) {
-          const p = pts[i], pp = pts[i - 1];
-          const mx = ((p.x + pp.x) / 2) * size.w * dpr;
-          const my = ((p.y + pp.y) / 2) * size.h * dpr;
-          ctx.quadraticCurveTo(pp.x * size.w * dpr, pp.y * size.h * dpr, mx, my);
-        }
-        ctx.stroke();
-      }
+      drawOne(ctx, {
+        points: drawingRef.current.points,
+        tool: drawingRef.current.tool,
+        color: erasing ? "#FAFAF5" : color,
+        width: erasing ? width * 2 : width,
+      }, dpr);
     }
   };
 
@@ -609,26 +629,30 @@ function CanvasArea({ code, isMyTurn, room, players, uid, isHost }: {
   const onDown = (e: React.PointerEvent) => {
     if (!isMyTurn) return;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    drawingRef.current = { points: [getPos(e)] };
+    drawingRef.current = { points: [getPos(e)], tool };
     redraw();
   };
   const onMove = (e: React.PointerEvent) => {
     if (!isMyTurn || !drawingRef.current) return;
-    drawingRef.current.points.push(getPos(e));
+    const pos = getPos(e);
+    if (drawingRef.current.tool === "pen") {
+      drawingRef.current.points.push(pos);
+    } else {
+      drawingRef.current.points[1] = pos;
+    }
     redraw();
   };
   const onUp = async () => {
     if (!isMyTurn || !drawingRef.current) return;
     const pts = drawingRef.current.points;
+    const t = drawingRef.current.tool as any;
     drawingRef.current = null;
-    // require minimum stroke length
-    if (pts.length < 4) { redraw(); return; }
+    if (pts.length < (t === "pen" ? 4 : 2)) { redraw(); return; }
     const stroke: Stroke = {
       uid, color: erasing ? "#FAFAF5" : color, width: erasing ? width * 2 : width,
-      points: pts, ts: Date.now(),
+      points: pts, tool: t, ts: Date.now(),
     };
     await pushStroke(code, stroke);
-    // pass turn
     await nextTurn(code, room);
   };
 
@@ -660,7 +684,7 @@ function CanvasArea({ code, isMyTurn, room, players, uid, isHost }: {
           ref={canvasRef}
           width={size.w} height={size.h}
           style={{ width: size.w, height: size.h, touchAction: "none" }}
-          className="rounded-2xl bg-canvas mx-auto block shadow-[0_30px_80px_-30px_rgba(0,0,0,0.6)] no-cursor"
+          className="rounded-2xl bg-canvas mx-auto block shadow-[0_30px_80px_-30px_rgba(0,0,0,0.6)]"
           onPointerDown={onDown}
           onPointerMove={onMove}
           onPointerUp={onUp}
@@ -670,6 +694,24 @@ function CanvasArea({ code, isMyTurn, room, players, uid, isHost }: {
 
       {/* Tools */}
       <div className={`mt-4 flex flex-wrap items-center justify-center gap-3 ${!isMyTurn ? "opacity-40 pointer-events-none" : ""}`}>
+        <div className="flex items-center gap-1 p-1.5 rounded-full bg-white/5 border border-white/[0.06]">
+          {[
+            { id: "pen", icon: Pencil },
+            { id: "line", icon: Minus },
+            { id: "square", icon: Square },
+            { id: "circle", icon: Circle },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => { setTool(t.id as any); setErasing(false); }}
+              className={`w-9 h-9 rounded-full grid place-items-center transition-colors ${tool === t.id && !erasing ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-white/10 hover:text-foreground"}`}
+              title={t.id.charAt(0).toUpperCase() + t.id.slice(1)}
+            >
+              <t.icon size={18} />
+            </button>
+          ))}
+        </div>
+
         <div className="flex items-center gap-1.5 p-1.5 rounded-full bg-white/5 border border-white/[0.06]">
           {BRUSH_SIZES.map((s) => (
             <button key={s} onClick={() => { setWidth(s); setErasing(false); }} className={`w-8 h-8 rounded-full grid place-items-center ${width === s && !erasing ? "bg-primary text-primary-foreground" : "hover:bg-white/10"}`}>
@@ -692,6 +734,7 @@ function CanvasArea({ code, isMyTurn, room, players, uid, isHost }: {
     </div>
   );
 }
+
 
 /* ======================== VOTING ======================== */
 
