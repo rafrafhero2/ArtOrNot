@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import GhostCanvas from "@/components/GhostCanvas";
 import AvatarView from "@/components/AvatarView";
 import { Palette, Wifi, MessageCircle, ArrowDown } from "lucide-react";
