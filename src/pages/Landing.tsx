@@ -1,6 +1,8 @@
 import { useRef, useEffect, useCallback } from "react";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import * as LucideIcons from "lucide-react";
+import { CHARACTER_MAP } from "@/components/AvatarCharacters";
 
 // ═══════════════════════════════════════
 // ANIMATION VARIANTS
@@ -446,19 +448,19 @@ const FEATURES = [
   {
     title: "Custom characters",
     desc: "Build your avatar with colors, faces, and hats. Express yourself before you even draw.",
-    icon: "👾",
+    icon: <LucideIcons.User className="w-8 h-8 text-[#E8FF47]" />,
     preview: "avatar",
   },
   {
     title: "Real-time drawing",
     desc: "Every brushstroke syncs instantly across all players. Smooth, lag-free, satisfying.",
-    icon: "✏️",
+    icon: <LucideIcons.Pencil className="w-8 h-8 text-[#E8FF47]" />,
     preview: "canvas",
   },
   {
     title: "Live chat",
     desc: "Strategize, accuse, misdirect. The social deduction starts before the vote.",
-    icon: "💬",
+    icon: <LucideIcons.MessageSquare className="w-8 h-8 text-[#E8FF47]" />,
     preview: "chat",
   },
 ];
@@ -521,7 +523,7 @@ function FeatureCard({
           {feature.preview === "chat" && <ChatPreview />}
         </div>
 
-        <div className="text-4xl mb-4">{feature.icon}</div>
+        <div className="mb-4">{feature.icon}</div>
         <h3 className="font-heading text-2xl font-bold mb-3">{feature.title}</h3>
         <p className="text-[#888880] leading-relaxed">{feature.desc}</p>
       </div>
@@ -530,30 +532,27 @@ function FeatureCard({
 }
 
 function AvatarPreview() {
-  const faces = ["🐸", "🦊", "🐙", "👾", "🐲"];
-  const colors = ["#FF6B6B", "#FECA57", "#48DBFB", "#A29BFE", "#55EFC4"];
+  const characters = ["bunny", "panda", "fox", "frog", "devil"];
+  const bgColors = ["#FF6B6B", "#FECA57", "#48DBFB", "#A29BFE", "#55EFC4"];
+  const bodyColors = ["#FFFFFF", "#0D0D0D", "#FFD93D", "#6BCB77", "#A29BFE"];
 
   return (
     <div className="flex gap-3">
-      {faces.map((face, i) => (
-        <motion.div
-          key={i}
-          className="w-12 h-12 rounded-full flex items-center justify-center text-xl"
-          style={{ backgroundColor: colors[i] }}
-          animate={{
-            scale: [1, 1.15, 1],
-            rotate: [0, 5, -5, 0],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            delay: i * 0.3,
-            ease: "easeInOut",
-          }}
-        >
-          {face}
-        </motion.div>
-      ))}
+      {characters.map((charId, i) => {
+        const Character = CHARACTER_MAP[charId] || CHARACTER_MAP.bunny;
+        return (
+          <motion.div
+            key={i}
+            className="w-12 h-12 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: bgColors[i] }}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: i * 0.1 }}
+          >
+            <Character size={32} color={bodyColors[i]} />
+          </motion.div>
+        );
+      })}
     </div>
   );
 }

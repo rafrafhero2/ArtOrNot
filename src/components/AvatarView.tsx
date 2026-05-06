@@ -1,5 +1,6 @@
 import { AVATAR_HATS, type Avatar } from "@/lib/avatar";
 import { cn } from "@/lib/utils";
+import { CHARACTER_MAP } from "./AvatarCharacters";
 
 type Props = {
   avatar: Avatar;
@@ -11,6 +12,8 @@ type Props = {
 
 export default function AvatarView({ avatar, size = 56, ring, ringColor, className }: Props) {
   const hat = AVATAR_HATS.find((h) => h.id === avatar.hat) ?? AVATAR_HATS[0];
+  const Character = CHARACTER_MAP[avatar.characterId] || CHARACTER_MAP.bunny;
+
   return (
     <div
       className={cn("relative shrink-0", className)}
@@ -21,12 +24,10 @@ export default function AvatarView({ avatar, size = 56, ring, ringColor, classNa
         style={{
           background: avatar.bgColor,
           boxShadow: ring ? `0 0 0 3px ${ringColor ?? "#E8FF47"}, 0 0 0 5px rgba(0,0,0,0.7)` : "inset 0 0 0 2px rgba(0,0,0,0.25)",
-          fontSize: size * 0.55,
-          lineHeight: 1,
         }}
         aria-hidden
       >
-        <span style={{ filter: "drop-shadow(0 2px 0 rgba(0,0,0,0.15))" }}>{avatar.faceEmoji}</span>
+        <Character size={size * 0.8} color={avatar.bodyColor} accentColor={avatar.accentColor} eyeColor={avatar.eyeColor} />
       </div>
       {hat.svg && (
         <svg

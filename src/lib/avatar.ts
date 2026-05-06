@@ -1,6 +1,9 @@
 export type Avatar = {
   bgColor: string;
-  faceEmoji: string;
+  bodyColor: string;
+  accentColor: string;
+  eyeColor: string;
+  characterId: string;
   hat: string; // hat id, "" = none
 };
 
@@ -9,10 +12,24 @@ export const AVATAR_BG_COLORS = [
   "#6BFFB8", "#FF6BD6", "#FFE66B", "#6BD6FF", "#C7FF6B",
 ];
 
+export const AVATAR_BODY_COLORS = [
+  "#0D0D0D", "#FFFFFF", "#FF6B6B", "#48DBFB", "#FFD93D",
+  "#6BCB77", "#A29BFE", "#FD79A8", "#FF9F43", "#C7FF6B",
+];
+
+export const AVATAR_ACCENT_COLORS = [
+  "#FF6B6B", "#48DBFB", "#FFD93D", "#E8FF47", "#FFFFFF",
+  "#0D0D0D", "#A29BFE", "#FD79A8", "#FF9F43", "#6BCB77",
+];
+
+export const AVATAR_EYE_COLORS = [
+  "#FFFFFF", "#0D0D0D", "#E8FF47", "#FF6B6B", "#48DBFB",
+  "#FFD93D", "#A29BFE", "#FD79A8", "#FF9F43", "#6BCB77",
+];
+
 export const AVATAR_FACES = [
-  "🐸","🐼","🦊","🐙","👾","🌚","🎭","🐲","🦄","🐧",
-  "🦉","🐯","🐵","🐨","🦁","🐰","🦝","🐢","🐳","🦋",
-  "🤖","👽","🦖","🐝","🐬",
+  "bunny", "panda", "fox", "frog", "devil",
+  "cool", "ghost", "robot", "alien", "tiger"
 ];
 
 export const AVATAR_HATS = [
@@ -43,7 +60,10 @@ export function randomNickname(): string {
 export function randomAvatar(): Avatar {
   return {
     bgColor: AVATAR_BG_COLORS[Math.floor(Math.random() * AVATAR_BG_COLORS.length)],
-    faceEmoji: AVATAR_FACES[Math.floor(Math.random() * AVATAR_FACES.length)],
+    bodyColor: AVATAR_BODY_COLORS[Math.floor(Math.random() * AVATAR_BODY_COLORS.length)],
+    accentColor: AVATAR_ACCENT_COLORS[Math.floor(Math.random() * AVATAR_ACCENT_COLORS.length)],
+    eyeColor: AVATAR_EYE_COLORS[Math.floor(Math.random() * AVATAR_EYE_COLORS.length)],
+    characterId: AVATAR_FACES[Math.floor(Math.random() * AVATAR_FACES.length)],
     hat: AVATAR_HATS[Math.floor(Math.random() * AVATAR_HATS.length)].id,
   };
 }

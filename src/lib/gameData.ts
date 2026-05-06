@@ -40,12 +40,14 @@ export const AVATAR_COLORS = [
   "#A29BFE", "#FD79A8", "#6C5CE7", "#00CEC9", "#55EFC4"
 ];
 
+export const AVATAR_BODY_COLORS = [
+  "#0D0D0D", "#FFFFFF", "#FF6B6B", "#48DBFB", "#FFD93D",
+  "#6BCB77", "#A29BFE", "#FD79A8", "#FF9F43", "#C7FF6B",
+];
+
 export const AVATAR_FACES = [
-  "🐸", "🐼", "🦊", "🐙", "👾",
-  "🌚", "🎭", "🐲", "🦄", "🐱",
-  "🐶", "🦁", "🐨", "🐵", "🐷",
-  "🐮", "🐰", "🐻", "🦉", "🐧",
-  "👽", "🤖", "💀", "🎃", "😎"
+  "bunny", "panda", "fox", "frog", "devil",
+  "cool", "ghost", "robot", "alien", "tiger"
 ];
 
 export const AVATAR_HATS = [
@@ -64,13 +66,15 @@ export const AVATAR_HATS = [
 
 export interface AvatarData {
   bgColor: string;
-  faceEmoji: string;
+  bodyColor: string;
+  characterId: string;
   hat: string;
 }
 
 export const DEFAULT_AVATAR: AvatarData = {
   bgColor: AVATAR_COLORS[0],
-  faceEmoji: AVATAR_FACES[0],
+  bodyColor: AVATAR_BODY_COLORS[0],
+  characterId: AVATAR_FACES[0],
   hat: "none",
 };
 
