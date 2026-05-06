@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { loadProfile } from "@/lib/avatar";
 import { joinRoom } from "@/lib/game";
 import { ensureAuth } from "@/lib/firebase";
+import { ThemeBackground } from "@/components/ThemeBackground";
 
 export default function Join() {
   const { code: codeParam } = useParams();
@@ -72,7 +73,9 @@ export default function Join() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-foreground relative overflow-hidden">
+      <ThemeBackground />
+      <div className="relative z-10 flex flex-col h-full">
       <nav className="container py-6">
         <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
           <ArrowLeft size={16}/> Back
@@ -115,6 +118,7 @@ export default function Join() {
             >{busy ? "Joining..." : "Join room"}</button>
           </div>
         </motion.div>
+      </div>
       </div>
     </div>
   );

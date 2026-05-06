@@ -6,18 +6,27 @@ import { toast } from "sonner";
 import {
   Crown, X, Copy, Check, Play, LogOut, Settings as SettingsIcon,
   ChevronDown, Eraser, Undo2, Timer, Vote as VoteIcon, MessageCircle,
-  Square, Circle, Minus, Pencil
+  Square, Circle, Minus, Pencil, Info, Edit2, RefreshCw
 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { 
+  Tooltip, TooltipContent, TooltipTrigger, TooltipProvider 
+} from "@/components/ui/tooltip";
+import { 
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger 
+} from "@/components/ui/dialog";
 import AvatarView from "@/components/AvatarView";
+import AvatarCustomizer from "@/components/AvatarCustomizer";
 import Chat from "@/components/Chat";
-import { loadProfile } from "@/lib/avatar";
+import { loadProfile, saveProfile } from "@/lib/avatar";
 import { ensureAuth } from "@/lib/firebase";
+import { ThemeBackground } from "@/components/ThemeBackground";
 import {
   subscribeRoom, subscribePlayers, type RoomDoc, type PlayerDoc,
   updateSettings, kickPlayer, leaveRoom, startGame, defaultSettings,
   markRevealReady, beginPlaying, nextTurn, pushStroke, subscribeStrokes,
   castVote, finalizeVote, submitFakeGuess, playAgain, backToLobby,
-  updateCountdown, type Stroke, type GameSettings,
+  updateCountdown, updatePlayerInfo, type Stroke, type GameSettings,
 } from "@/lib/game";
 import { CATEGORIES } from "@/lib/words";
 
@@ -35,6 +44,26 @@ export default function Room() {
   const [players, setPlayers] = useState<PlayerDoc[]>([]);
   const [showChat, setShowChat] = useState(false);
   const profile = loadProfile();
+
+  // Trigger win animation
+  useEffect(() => {
+    if (room?.status === "results" && room.winner && uid) {
+      const isFake = room.fakeUIDs?.includes(uid);
+      const won = (room.winner === "real" && !isFake) || (room.winner === "fake" && isFake);
+      
+      if (won) {
+        const amount = isFake ? 100 : 50;
+        // Update local profile
+        const p = loadProfile();
+        if (p) {
+          p.credits += amount;
+          saveProfile(p);
+        }
+        // Show animation
+        if (window.testGems) window.testGems(amount);
+      }
+    }
+  }, [room?.status, room?.winner, uid]);
 
   useEffect(() => {
     if (!profile) navigate(`/me?next=${encodeURIComponent(`/join/${code}`)}`);
@@ -98,6 +127,17 @@ function Lobby({ code, room, players, uid, isHost }: { code: string; room: RoomD
   const link = `${window.location.origin}/join/${code}`;
   const minPlayers = 3;
 
+  const SETTINGS_INFO = {
+    rounds: "The number of rounds to play. Each round, everyone gets a turn to draw.",
+    drawTime: "How many seconds each player gets to draw their single stroke.",
+    numFakes: "How many players will be assigned as 'Fake Artists' who don't know the word.",
+    category: "The pool of words the secret word will be picked from.",
+    customWord: "Force a specific word for the next round (leave empty for random).",
+    wordRevealMode: "What information the Fake Artist gets (e.g., just the category or a hint letter).",
+    voteStyle: "Whether the game ends by majority vote or the host decides manually.",
+    chatDuringDraw: "If players are allowed to message each other while someone is drawing."
+  };
+
   const updateS = (patch: Partial<GameSettings>) => {
     if (!isHost) return;
     updateSettings(code, { ...settings, ...patch });
@@ -123,7 +163,9 @@ function Lobby({ code, room, players, uid, isHost }: { code: string; room: RoomD
   const slots = Math.max(0, 6 - players.length);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-foreground relative overflow-hidden">
+      <ThemeBackground />
+      <div className="relative z-10 flex flex-col h-full">
       <nav className="container py-4 flex items-center justify-between">
         <button onClick={() => { leaveRoom(code, uid); navigate("/"); }} className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-2">
           <LogOut size={14}/> Leave
@@ -167,7 +209,30 @@ function Lobby({ code, room, players, uid, isHost }: { code: string; room: RoomD
                       <div className="font-medium truncate flex items-center gap-1.5">
                         {p.nickname}
                         {p.isHost && <Crown size={13} className="text-primary" />}
-                        {p.uid === uid && <span className="text-[10px] text-muted-foreground">(you)</span>}
+                        {p.uid === uid && (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <button className="p-1 hover:bg-white/10 rounded text-muted-foreground hover:text-primary transition-colors">
+                                <Edit2 size={12} />
+                              </button>
+                            </DialogTrigger>
+                            <DialogContent className="bg-card border-white/10 text-foreground max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>Customize Profile</DialogTitle>
+                              </DialogHeader>
+                              <div className="py-4">
+                                <AvatarCustomizer 
+                                  compact
+                                  profile={profile} 
+                                  updateProfile={(newP) => {
+                                    saveProfile(newP);
+                                    updatePlayerInfo(code, uid, { nickname: newP.nickname, avatar: newP.avatar });
+                                  }} 
+                                />
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground">Score {p.score ?? 0}</div>
                     </div>
@@ -214,19 +279,30 @@ function Lobby({ code, room, players, uid, isHost }: { code: string; room: RoomD
               {settingsOpen && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                   <div className="pt-5 space-y-5">
-                    <Field label="Rounds">
-                      <Pills value={settings.rounds} options={[1,2,3,4,5]} disabled={!isHost} onChange={(v) => updateS({ rounds: v as number })} />
+                    <Field label="Rounds" info={SETTINGS_INFO.rounds}>
+                      <div className="flex items-center gap-4 pt-2">
+                        <Slider 
+                          value={[settings.rounds]} 
+                          max={50} 
+                          min={1} 
+                          step={1} 
+                          disabled={!isHost}
+                          onValueChange={([v]) => updateS({ rounds: v })}
+                          className="flex-1"
+                        />
+                        <span className="font-mono text-primary w-8 text-right font-bold">{settings.rounds}</span>
+                      </div>
                     </Field>
-                    <Field label="Drawing time">
+                    <Field label="Drawing time" info={SETTINGS_INFO.drawTime}>
                       <Pills value={settings.drawTime} options={[15,30,45,60]} suffix="s" disabled={!isHost} onChange={(v) => updateS({ drawTime: v as number })} />
                     </Field>
-                    <Field label="Fake artists">
+                    <Field label="Fake artists" info={SETTINGS_INFO.numFakes}>
                       <Pills value={settings.numFakes} options={[1,2]} disabled={!isHost} onChange={(v) => updateS({ numFakes: v as 1|2 })} />
                     </Field>
-                    <Field label="Category">
+                    <Field label="Category" info={SETTINGS_INFO.category}>
                       <Pills value={settings.category} options={CATEGORIES} disabled={!isHost} onChange={(v) => updateS({ category: v as string })} />
                     </Field>
-                    <Field label="Custom word (optional)">
+                    <Field label="Custom word (optional)" info={SETTINGS_INFO.customWord}>
                       <input
                         disabled={!isHost}
                         value={settings.customWord ?? ""}
@@ -235,19 +311,19 @@ function Lobby({ code, room, players, uid, isHost }: { code: string; room: RoomD
                         className="w-full bg-white/5 rounded-xl px-3 py-2 text-sm border border-white/[0.06] focus:border-primary outline-none disabled:opacity-50"
                       />
                     </Field>
-                    <Field label="Reveal mode">
+                    <Field label="Reveal mode" info={SETTINGS_INFO.wordRevealMode}>
                       <Pills value={settings.wordRevealMode} options={[
                         { v: "category", l: "Category only" },
                         { v: "category+letter", l: "+ Hint letter" },
                       ]} disabled={!isHost} onChange={(v) => updateS({ wordRevealMode: v as any })} />
                     </Field>
-                    <Field label="Vote style">
+                    <Field label="Vote style" info={SETTINGS_INFO.voteStyle}>
                       <Pills value={settings.voteStyle} options={[
                         { v: "majority", l: "Majority" },
                         { v: "host", l: "Host decides" },
                       ]} disabled={!isHost} onChange={(v) => updateS({ voteStyle: v as any })} />
                     </Field>
-                    <Field label="Chat during drawing">
+                    <Field label="Chat during drawing" info={SETTINGS_INFO.chatDuringDraw}>
                       <Pills value={settings.chatDuringDraw ? "on" : "off"} options={[
                         { v: "on", l: "Allowed" }, { v: "off", l: "Silent" },
                       ]} disabled={!isHost} onChange={(v) => updateS({ chatDuringDraw: v === "on" })} />
@@ -293,14 +369,31 @@ function Lobby({ code, room, players, uid, isHost }: { code: string; room: RoomD
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, info, children }: { label: string; info?: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-2">{label}</div>
+      <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground mb-2 flex items-center gap-1.5">
+        {label}
+        {info && (
+          <TooltipProvider>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <button className="text-muted-foreground/50 hover:text-primary transition-colors cursor-help">
+                  <Info size={13} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-[200px] bg-popover border-white/10 text-xs">
+                {info}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
       {children}
     </div>
   );
@@ -382,18 +475,38 @@ function Game({ code, room, players, uid, isHost, me, showChat, setShowChat }: {
   const exit = () => { leaveRoom(code, uid); navigate("/"); };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen text-foreground relative overflow-hidden flex flex-col">
+      <ThemeBackground />
+      <div className="relative z-10 flex flex-col flex-1 w-full h-full">
       {/* Top bar */}
       <div className="border-b border-white/[0.06]">
         <div className="container py-3 flex items-center gap-4">
           <span className="font-mono font-bold text-primary tracking-[0.2em]">{code}</span>
           <span className="text-xs text-muted-foreground hidden sm:inline">Round {Math.max(1, room.currentRound)}/{settings.rounds}</span>
+          
+          {/* Game controls / Status */}
+          <div className="flex items-center gap-4">
+            {room.status === "playing" && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10">
+                  <Timer size={16} className="text-primary" />
+                  <span className="font-mono font-bold text-lg">{timeLeft}s</span>
+                </div>
+                
+                {isHost && (
+                  <button 
+                    onClick={() => nextTurn(code, room)}
+                    className="btn-ghost py-2 px-4 text-xs flex items-center gap-2 border-red-500/20 hover:bg-red-500/10 hover:text-red-400"
+                    title="Skip this turn"
+                  >
+                    Skip Turn
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+          
           <div className="flex-1" />
-          {room.status === "playing" && (
-            <div className="flex items-center gap-2 font-mono text-sm">
-              <Timer size={14}/> {timeLeft}s
-            </div>
-          )}
           <button onClick={() => setShowChat(!showChat)} className="lg:hidden text-muted-foreground hover:text-foreground p-1.5"><MessageCircle size={18}/></button>
           <button onClick={exit} className="text-muted-foreground hover:text-accent p-1.5" title="Leave"><LogOut size={16}/></button>
         </div>
@@ -479,7 +592,7 @@ function Game({ code, room, players, uid, isHost, me, showChat, setShowChat }: {
               transition={{ duration: 0.6, ease }}
               className="card-surface p-10 max-w-lg w-full text-center"
             >
-              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Round {room.currentRound} — Category</div>
+              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Round {room.currentRound} - Category</div>
               <div className="font-display text-3xl mt-2">{room.category}</div>
               <div className="mt-8">
                 {isFake ? (
@@ -507,6 +620,7 @@ function Game({ code, room, players, uid, isHost, me, showChat, setShowChat }: {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }
@@ -669,7 +783,7 @@ function CanvasArea({ code, isMyTurn, room, players, uid, isHost }: {
         <motion.div
           initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
           className="mb-3 text-center text-sm pill bg-primary/15 text-primary border border-primary/30 inline-block"
-        >Your turn — draw ONE stroke.</motion.div>
+        >Your turn - draw ONE stroke.</motion.div>
       )}
       {!isMyTurn && room.status === "playing" && (
         <div className="mb-3 text-center text-sm text-muted-foreground">
@@ -866,7 +980,7 @@ function ResultsArea({ code, room, players, uid, isFake, isHost, settings }: {
             <div className="font-display text-3xl text-accent">Fake Artist wins!</div>
             {room.fakeGuess && (
               <div className="text-sm text-muted-foreground mt-2">
-                Guessed "{room.fakeGuess}" — {fakeGuessedRight ? "correct!" : "but the real players failed to catch them."}
+                Guessed "{room.fakeGuess}" - {fakeGuessedRight ? "correct!" : "but the real players failed to catch them."}
               </div>
             )}
           </div>

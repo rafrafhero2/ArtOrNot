@@ -135,6 +135,10 @@ export async function kickPlayer(code: string, uid: string) {
   await deleteDoc(playerRef(code, uid));
 }
 
+export async function updatePlayerInfo(code: string, uid: string, patch: Partial<PlayerDoc>) {
+  await updateDoc(playerRef(code, uid), patch as any);
+}
+
 export async function updateSettings(code: string, settings: Partial<GameSettings>) {
   await updateDoc(roomRef(code), { settings: { ...defaultSettings, ...settings } as any });
 }

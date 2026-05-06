@@ -1,7 +1,8 @@
 import { useRef, useEffect, useCallback, useState } from "react";
-import { motion, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { motion, useInView, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence, Variants } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import * as LucideIcons from "lucide-react";
+import Lenis from "lenis";
 import { CHARACTER_MAP } from "@/components/AvatarCharacters";
 import { useProfile } from "@/hooks/useProfile";
 import AuthModal from "@/components/AuthModal";
@@ -11,11 +12,11 @@ import { logout } from "@/lib/firebase";
 // ANIMATION VARIANTS
 // ═══════════════════════════════════════
 
-const springTransition = { duration: 0.8, ease: [0.16, 1, 0.3, 1] };
+const springTransition = { duration: 0.8, ease: [0.16, 1, 0.3, 1] } as const;
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 30, scale: 0.98 },
-  visible: (i: number) => ({
+  visible: (i: any) => ({
     opacity: 1,
     y: 0,
     scale: 1,
@@ -23,7 +24,7 @@ const fadeUp = {
   }),
 };
 
-const brushStroke = {
+const brushStroke: Variants = {
   hidden: { pathLength: 0, opacity: 0 },
   visible: {
     pathLength: 1,
@@ -35,134 +36,19 @@ const brushStroke = {
   }
 };
 
-const stagger = {
+const stagger: Variants = {
+  hidden: {},
   visible: {
     transition: { delayChildren: 0.1, staggerChildren: 0.12 },
   },
 };
 
+import { ThemeBackground } from "@/components/ThemeBackground";
+import { ArtGem } from "@/components/ArtGem";
+
 // ═══════════════════════════════════════
-// BACKGROUND CANVAS ANIMATION
+// HELPER FUNCTIONS
 // ═══════════════════════════════════════
-
-function BackgroundCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animFrameRef = useRef<number>(0);
-
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-    canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-
-    const w = canvas.offsetWidth;
-    const h = canvas.offsetHeight;
-
-    // Ghost strokes data — simulated drawing paths
-    const strokes = [
-      {
-        color: "rgba(232,255,71,0.06)",
-        width: 4,
-        speed: 0.0004,
-        points: generateCurve(w * 0.2, h * 0.3, w * 0.6, h * 0.5, 80),
-      },
-      {
-        color: "rgba(255,107,107,0.05)",
-        width: 3,
-        speed: 0.0003,
-        points: generateCurve(w * 0.5, h * 0.2, w * 0.8, h * 0.7, 60),
-      },
-      {
-        color: "rgba(232,255,71,0.04)",
-        width: 5,
-        speed: 0.0005,
-        points: generateCurve(w * 0.1, h * 0.6, w * 0.9, h * 0.4, 100),
-      },
-      {
-        color: "rgba(72, 219, 251, 0.04)",
-        width: 3,
-        speed: 0.00035,
-        points: generateCircle(w * 0.65, h * 0.35, Math.min(w, h) * 0.15, 80),
-      },
-      {
-        color: "rgba(162, 155, 254, 0.04)",
-        width: 4,
-        speed: 0.00025,
-        points: generateCurve(w * 0.3, h * 0.7, w * 0.7, h * 0.2, 70),
-      },
-    ];
-
-
-    let startTime = performance.now();
-
-    function animate(time: number) {
-      const elapsed = time - startTime;
-      ctx.clearRect(0, 0, w, h);
-
-      strokes.forEach((stroke) => {
-        const progress = (elapsed * stroke.speed) % 1;
-        const count = Math.floor(progress * stroke.points.length);
-
-        if (count < 2) return;
-
-        ctx.beginPath();
-        ctx.strokeStyle = stroke.color;
-        ctx.lineWidth = stroke.width;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-
-        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
-        for (let i = 1; i < count; i++) {
-          const p = stroke.points[i];
-          const pp = stroke.points[i - 1];
-          const mx = (pp.x + p.x) / 2;
-          const my = (pp.y + p.y) / 2;
-          ctx.quadraticCurveTo(pp.x, pp.y, mx, my);
-        }
-        ctx.stroke();
-
-        // Ghost cursor
-        if (count > 0 && count < stroke.points.length) {
-          const cp = stroke.points[count - 1];
-          ctx.beginPath();
-          ctx.arc(cp.x, cp.y, 4, 0, Math.PI * 2);
-          ctx.fillStyle = stroke.color.replace(/[\d.]+\)$/, "0.3)");
-          ctx.fill();
-        }
-      });
-
-      animFrameRef.current = requestAnimationFrame(animate);
-    }
-
-    animFrameRef.current = requestAnimationFrame(animate);
-    startTime = performance.now();
-  }, []);
-
-  useEffect(() => {
-    draw();
-    window.addEventListener("resize", draw);
-    return () => {
-      cancelAnimationFrame(animFrameRef.current);
-      window.removeEventListener("resize", draw);
-    };
-  }, [draw]);
-
-  return (
-    <motion.canvas
-      ref={canvasRef}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 0.8 }}
-      transition={{ duration: 2 }}
-      className="absolute inset-0 w-full h-full pointer-events-none"
-      style={{ filter: "blur(0.5px)" }}
-    />
-  );
-}
-
 function generateCurve(
   x1: number, y1: number, x2: number, y2: number, points: number
 ) {
@@ -178,72 +64,7 @@ function generateCurve(
   return result;
 }
 
-function generateCircle(cx: number, cy: number, r: number, points: number) {
-  const result = [];
-  for (let i = 0; i < points; i++) {
-    const angle = (i / points) * Math.PI * 2;
-    result.push({
-      x: cx + Math.cos(angle) * r + Math.sin(angle * 3) * r * 0.1,
-      y: cy + Math.sin(angle) * r + Math.cos(angle * 2) * r * 0.1,
-    });
-  }
-  return result;
-}
-
-// ═══════════════════════════════════════
-// SCROLL CONTROLLED STROKES
-// ═══════════════════════════════════════
-
-function ScrollControlledStrokes() {
-  const { scrollYProgress } = useScroll();
-  
-  // Create multiple parallax layers for strokes
-  const y1 = useTransform(scrollYProgress, [0, 1], [0, -200]);
-  const y2 = useTransform(scrollYProgress, [0, 1], [0, -400]);
-  const r1 = useTransform(scrollYProgress, [0, 1], [0, 45]);
-  const r2 = useTransform(scrollYProgress, [0, 1], [0, -30]);
-
-  return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      <motion.svg
-        style={{ y: y1, rotate: r1, opacity: 0.15 }}
-        className="absolute top-[20%] -left-20 w-[600px] h-[300px]"
-        viewBox="0 0 600 300"
-      >
-        <path
-          d="M50,150 Q150,50 300,150 T550,150"
-          fill="none"
-          stroke="#E8FF47"
-          strokeWidth="40"
-          strokeLinecap="round"
-        />
-      </motion.svg>
-
-      <motion.svg
-        style={{ y: y2, rotate: r2, opacity: 0.1 }}
-        className="absolute top-[60%] -right-20 w-[500px] h-[400px]"
-        viewBox="0 0 500 400"
-      >
-        <path
-          d="M50,50 C150,50 150,350 250,350 S350,50 450,50"
-          fill="none"
-          stroke="#FF6B6B"
-          strokeWidth="30"
-          strokeLinecap="round"
-        />
-      </motion.svg>
-      
-      <motion.div 
-        style={{ 
-          y: useTransform(scrollYProgress, [0, 1], [100, -300]),
-          rotate: useTransform(scrollYProgress, [0, 1], [-10, 20]),
-          opacity: 0.05
-        }}
-        className="absolute top-[40%] left-[60%] w-64 h-64 border-[20px] border-[#48DBFB] rounded-full"
-      />
-    </div>
-  );
-}
+// Removed ScrollControlledStrokes globally
 
 // ═══════════════════════════════════════
 // HERO SECTION
@@ -257,10 +78,11 @@ function Hero() {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-20">
-      <BackgroundCanvas />
-
-      {/* Radial glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-[radial-gradient(circle,rgba(232,255,71,0.06)_0%,transparent_70%)] pointer-events-none" />
+      <ThemeBackground 
+        bgHue="#0A0F0A" 
+        glowColor="rgba(232, 255, 71, 0.2)"
+        colors={["rgba(232, 255, 71, 0.3)", "rgba(255, 255, 255, 0.1)"]}
+      />
 
       <motion.div
         style={{ opacity, scale }}
@@ -277,7 +99,7 @@ function Hero() {
         >
           One of you is{" "}
           <span className="relative inline-block px-2">
-            <span className="text-[#E8FF47] drop-shadow-[0_0_20px_rgba(232,255,71,0.15)]">lying</span>
+            <span className="gradient-text drop-shadow-[0_0_30px_rgba(232,255,71,0.4)]">lying</span>
             <svg
               className="absolute -bottom-2 left-0 w-full overflow-visible"
               viewBox="0 0 200 12"
@@ -312,19 +134,19 @@ function Hero() {
           className="flex flex-col sm:flex-row gap-6 justify-center items-center"
         >
           <motion.button
-            whileHover={{ scale: 1.05, y: -4 }}
+            whileHover={{ scale: 1.05, y: -4, backgroundColor: "rgba(232, 255, 71, 1)" }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/me?next=/create")}
-            className="btn-primary text-xl px-12 py-5 min-w-[240px] shadow-[0_20px_40px_rgba(232,255,71,0.15)]"
+            onClick={() => navigate("/create")}
+            className="bg-primary text-[#0D0D0D] font-heading font-bold rounded-full transition-colors duration-300 px-12 py-5 text-xl min-w-[240px]"
             id="cta-create-room"
           >
             Create a room
           </motion.button>
           <motion.button
-            whileHover={{ scale: 1.05, y: -4, backgroundColor: "rgba(255,255,255,0.05)" }}
+            whileHover={{ y: -4, borderColor: "rgba(255,255,255,0.5)" }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate("/me?next=/join")}
-            className="btn-ghost text-xl px-12 py-5 min-w-[240px]"
+            className="pill border border-white/20 text-foreground font-semibold hover:border-white/50 bg-transparent transition-colors duration-300 text-xl px-12 py-5 min-w-[240px]"
             id="cta-join-room"
           >
             Join a room
@@ -382,7 +204,7 @@ const STEPS = [
   {
     num: "04",
     title: "Vote & reveal",
-    desc: "Who's the imposter? Vote them out. But if the Fake Artist guesses the word — they win!",
+    desc: "Who's the imposter? Vote them out. But if the Fake Artist guesses the word - they win!",
     icon: "🗳️",
   },
 ];
@@ -400,8 +222,8 @@ function StepCard({ step, i, scrollProgress }: { step: typeof STEPS[0], i: numbe
       style={{ borderRadius, rotate }}
       variants={fadeUp}
       custom={i + 2}
-      whileHover={{ y: -8, transition: { duration: 0.3 } }}
-      className="card group relative overflow-hidden bg-[#161616] border border-white/5 hover:border-primary/30 transition-all duration-300 p-8"
+      whileHover={{ y: -8, scale: 1.02 }}
+      className="card group relative overflow-hidden bg-surface border border-white/[0.04] hover:border-[#48DBFB]/40 p-8 shadow-lg hover:shadow-[0_0_30px_rgba(72,219,251,0.15)]"
     >
       {/* Accent number badge */}
       <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary text-[#0D0D0D] font-mono font-bold text-lg mb-8 shadow-[0_0_20px_rgba(232,255,71,0.2)]">
@@ -415,7 +237,7 @@ function StepCard({ step, i, scrollProgress }: { step: typeof STEPS[0], i: numbe
       <p className="text-[#888880] text-base leading-relaxed">{step.desc}</p>
 
       {/* Hover glow */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,rgba(232,255,71,0.08)_0%,transparent_60%)]" />
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,rgba(72,219,251,0.1)_0%,transparent_60%)]" />
     </motion.div>
   );
 }
@@ -430,10 +252,16 @@ function HowItWorks() {
   return (
     <section
       ref={ref}
-      className="relative py-32 px-6 max-w-6xl mx-auto"
+      className="relative py-32 overflow-hidden"
       id="how-it-works"
     >
-      <motion.div
+      <ThemeBackground 
+        bgHue="#050C12" 
+        glowColor="rgba(72, 219, 251, 0.15)"
+        colors={["rgba(72, 219, 251, 0.3)", "rgba(255, 255, 255, 0.1)"]}
+      />
+      <div className="relative z-10 px-6 max-w-6xl mx-auto">
+        <motion.div
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-100px" }}
@@ -459,7 +287,8 @@ function HowItWorks() {
             <StepCard key={step.num} step={step} i={i} scrollProgress={scrollYProgress} />
           ))}
         </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </section>
   );
 }
@@ -499,19 +328,20 @@ function FeatureCard({
   const ref = useRef(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [12, -12]), { stiffness: 300, damping: 30 });
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-12, 12]), { stiffness: 300, damping: 30 });
+
   const handleMouseMove = (e: React.MouseEvent) => {
-    const card = cardRef.current;
-    if (!card) return;
-    const rect = card.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    card.style.transform = `perspective(1000px) rotateY(${x * 12}deg) rotateX(${-y * 12}deg) scale3d(1.02, 1.02, 1.02)`;
+    const rect = e.currentTarget.getBoundingClientRect();
+    x.set((e.clientX - rect.left) / rect.width - 0.5);
+    y.set((e.clientY - rect.top) / rect.height - 0.5);
   };
 
   const handleMouseLeave = () => {
-    if (cardRef.current) {
-      cardRef.current.style.transform = "perspective(1000px) rotateY(0deg) rotateX(0deg) scale3d(1, 1, 1)";
-    }
+    x.set(0);
+    y.set(0);
   };
 
   return (
@@ -524,16 +354,16 @@ function FeatureCard({
       viewport={{ once: true, margin: "-100px" }}
       className="h-full"
     >
-      <div
-        ref={cardRef}
+      <motion.div
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className="card h-full flex flex-col items-center text-center p-10 group transition-all duration-300 ease-out bg-[#161616] border border-white/5 hover:border-primary/20"
-        style={{ transformStyle: "preserve-3d", willChange: "transform" }}
+        whileHover={{ y: -8, scale: 1.02 }}
+        className="card h-full flex flex-col items-center text-center p-10 group bg-surface border border-white/[0.04] hover:border-[#A29BFE]/40 hover:shadow-[0_0_40px_rgba(162,155,254,0.15)]"
+        style={{ transformStyle: "preserve-3d", rotateX, rotateY, willChange: "transform" }}
       >
         {/* Feature preview area */}
         <div 
-          className="w-full h-56 rounded-2xl bg-[#0D0D0D] border border-white/5 mb-8 flex items-center justify-center overflow-hidden relative shadow-inner"
+          className="w-full h-56 rounded-2xl bg-card border border-white/[0.04] mb-8 flex items-center justify-center overflow-hidden relative shadow-inner"
           style={{ transform: "translateZ(30px)" }}
         >
           {feature.preview === "avatar" && <AvatarPreview />}
@@ -548,8 +378,8 @@ function FeatureCard({
         <p className="text-[#888880] text-lg leading-relaxed" style={{ transform: "translateZ(20px)" }}>{feature.desc}</p>
         
         {/* Hover glow */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[radial-gradient(circle_at_50%_100%,rgba(232,255,71,0.03)_0%,transparent_70%)]" />
-      </div>
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[radial-gradient(circle_at_50%_100%,rgba(162,155,254,0.08)_0%,transparent_70%)]" />
+      </motion.div>
     </motion.div>
   );
 }
@@ -682,8 +512,14 @@ function ChatPreview() {
 
 function Features() {
   return (
-    <section className="py-32 px-6 max-w-6xl mx-auto" id="features">
-      <div className="text-center mb-16">
+    <section className="relative py-32 overflow-hidden" id="features">
+      <ThemeBackground 
+        bgHue="#0A0512" 
+        glowColor="rgba(162, 155, 254, 0.15)"
+        colors={["rgba(162, 155, 254, 0.3)", "rgba(255, 107, 107, 0.2)"]}
+      />
+      <div className="relative z-10 px-6 max-w-6xl mx-auto">
+        <div className="text-center mb-16">
         <h2 className="font-heading text-4xl md:text-5xl font-bold mb-4">
           Built for <span className="text-[#E8FF47]">fun</span>
         </h2>
@@ -696,6 +532,7 @@ function Features() {
         {FEATURES.map((feature, i) => (
           <FeatureCard key={feature.title} feature={feature} index={i} />
         ))}
+      </div>
       </div>
     </section>
   );
@@ -726,29 +563,24 @@ function Footer() {
 }
 
 // ═══════════════════════════════════════
-// PARALLAX DIVIDER
+// GRADIENT DIVIDER
 // ═══════════════════════════════════════
 
-function ParallaxDivider() {
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const x = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
-
+function GradientDivider({ fromHue, toHue, glowColor }: { fromHue: string, toHue: string, glowColor: string }) {
   return (
-    <div ref={ref} className="overflow-hidden py-12 border-y border-[rgba(255,255,255,0.03)]">
-      <motion.div style={{ x }} className="whitespace-nowrap">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <span
-            key={i}
-            className="inline-block font-heading text-6xl md:text-8xl font-bold text-[rgba(255,255,255,0.03)] mx-8 select-none"
-          >
-            ArtOrNot
-          </span>
-        ))}
-      </motion.div>
+    <div 
+      className="w-full relative flex items-center justify-center py-16 overflow-hidden"
+      style={{ background: `linear-gradient(to bottom, ${fromHue}, ${toHue})` }}
+    >
+      <div className="absolute w-[80%] max-w-3xl h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div 
+        className="absolute w-[40%] max-w-lg h-[2px] bg-gradient-to-r from-transparent to-transparent animate-glow-pulse" 
+        style={{ backgroundImage: `linear-gradient(to right, transparent, ${glowColor}, transparent)` }}
+      />
+      <div 
+        className="absolute w-[20%] max-w-xs h-[4px] bg-gradient-to-r from-transparent to-transparent blur-[4px]" 
+        style={{ backgroundImage: `linear-gradient(to right, transparent, ${glowColor}, transparent)` }}
+      />
     </div>
   );
 }
@@ -771,7 +603,7 @@ function LandingNavbar() {
   return (
     <>
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-6 py-4 ${isScrolled ? "bg-[#0D0D0D]/80 backdrop-blur-lg border-b border-white/5 py-3" : "bg-transparent"}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 px-6 py-4 ${isScrolled ? "glass-nav py-3" : "bg-transparent"}`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center rotate-3 group-hover:rotate-12 transition-transform">
@@ -786,6 +618,12 @@ function LandingNavbar() {
             <div className="hidden md:flex items-center gap-8 text-sm font-medium text-[#888880]">
               <a href="#how-it-works" className="hover:text-white transition-colors">How it works</a>
               <a href="#features" className="hover:text-white transition-colors">Features</a>
+              <Link to="/shop" className="hover:text-white transition-colors flex items-center gap-2">
+                <LucideIcons.ShoppingBag size={14} className="text-primary" /> Shop
+              </Link>
+              <Link to="/wardrobe" className="hover:text-white transition-colors flex items-center gap-2">
+                <LucideIcons.User size={14} className="text-primary" /> Wardrobe
+              </Link>
             </div>
 
             <div className="h-4 w-[1px] bg-white/10 hidden md:block" />
@@ -794,7 +632,7 @@ function LandingNavbar() {
               {user && !user.isAnonymous ? (
                 <div className="flex items-center gap-4">
                   <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-                    <LucideIcons.Coins size={14} className="text-primary" />
+                    <ArtGem size={14} />
                     <span className="font-mono text-sm font-bold">{profile.credits}</span>
                   </div>
                   <button 
@@ -823,22 +661,121 @@ function LandingNavbar() {
 }
 
 // ═══════════════════════════════════════
+// GLOBAL BRUSH STROKES
+// ═══════════════════════════════════════
+
+function GlobalBrushStrokes() {
+  const { scrollYProgress } = useScroll();
+  
+  // Color interpolation based on scroll progress
+  // Hero (0) -> HowItWorks (0.4) -> Features (0.8)
+  const strokeColor = useTransform(
+    scrollYProgress,
+    [0, 0.4, 0.8, 1],
+    ["#E8FF47", "#48DBFB", "#A29BFE", "#A29BFE"]
+  );
+
+  const y1 = useTransform(scrollYProgress, [0, 1], [0, -400]);
+  const y2 = useTransform(scrollYProgress, [0, 1], [100, -600]);
+  const y3 = useTransform(scrollYProgress, [0, 1], [200, -300]);
+  
+  const r1 = useTransform(scrollYProgress, [0, 1], [-10, 25]);
+  const r2 = useTransform(scrollYProgress, [0, 1], [15, -20]);
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-[5] overflow-hidden">
+      {/* Top Left Stroke */}
+      <motion.svg
+        style={{ y: y1, rotate: r1, opacity: 0.15 }}
+        className="absolute top-[15%] -left-[10%] w-[50vw] h-[30vh] min-w-[600px]"
+        viewBox="0 0 600 300"
+      >
+        <motion.path
+          d="M50,150 Q150,50 300,150 T550,150"
+          fill="none"
+          style={{ stroke: strokeColor }}
+          strokeWidth="40"
+          strokeLinecap="round"
+        />
+      </motion.svg>
+
+      {/* Middle Right Stroke */}
+      <motion.svg
+        style={{ y: y2, rotate: r2, opacity: 0.12 }}
+        className="absolute top-[50%] -right-[5%] w-[45vw] h-[40vh] min-w-[500px]"
+        viewBox="0 0 500 400"
+      >
+        <motion.path
+          d="M50,50 C150,50 150,350 250,350 S350,50 450,50"
+          fill="none"
+          style={{ stroke: strokeColor }}
+          strokeWidth="30"
+          strokeLinecap="round"
+        />
+      </motion.svg>
+      
+      {/* Bottom Left Stroke */}
+      <motion.svg
+        style={{ y: y3, rotate: r1, opacity: 0.1 }}
+        className="absolute top-[80%] -left-[5%] w-[40vw] h-[40vh] min-w-[400px]"
+        viewBox="0 0 400 400"
+      >
+        <motion.path
+          d="M 50,350 C 50,150 150,50 350,50"
+          fill="none"
+          style={{ stroke: strokeColor }}
+          strokeWidth="45"
+          strokeLinecap="round"
+        />
+      </motion.svg>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════
 // MAIN LANDING PAGE
 // ═══════════════════════════════════════
 
 export default function Landing() {
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      gestureOrientation: 'vertical',
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      touchMultiplier: 2,
+    });
+
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    return () => {
+      lenis.destroy();
+    };
+  }, []);
+
   return (
-    <main className="min-h-screen bg-[#0D0D0D] relative">
+    <main className="min-h-screen bg-background relative selection:bg-primary/30 selection:text-white">
       <LandingNavbar />
-      <ScrollControlledStrokes />
-      <div className="pt-20">
-        <Hero />
-      </div>
-      <ParallaxDivider />
+      <GlobalBrushStrokes />
+      
+      <Hero />
+      <GradientDivider fromHue="#0A0F0A" toHue="#050C12" glowColor="rgba(72,219,251,0.8)" />
+      
       <HowItWorks />
+      <GradientDivider fromHue="#050C12" toHue="#0A0512" glowColor="rgba(162,155,254,0.8)" />
+      
       <Features />
-      <ParallaxDivider />
-      <Footer />
+      <GradientDivider fromHue="#0A0512" toHue="#0A0F0A" glowColor="rgba(232,255,71,0.5)" />
+      
+      <div className="bg-[#0A0F0A]">
+        <Footer />
+      </div>
     </main>
   );
 }

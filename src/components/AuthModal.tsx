@@ -83,7 +83,7 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean, onClos
                   {isLogin ? "Welcome Back" : "Join the fun"}
                 </h2>
                 <p className="text-[#888880] text-lg">
-                  {isLogin ? "Sign in to keep your progress" : "Create an account to earn credits"}
+                  {isLogin ? "Sign in to keep your progress" : "Create an account to earn gems"}
                 </p>
               </div>
 
@@ -152,7 +152,7 @@ export default function AuthModal({ isOpen, onClose }: { isOpen: boolean, onClos
             
             <div className="bg-white/[0.02] py-5 text-center border-t border-white/5">
               <p className="text-[10px] text-white/10 uppercase tracking-[0.3em] font-medium">
-                ArtOrNot — Play with friends
+                ArtOrNot - Play with friends
               </p>
             </div>
           </motion.div>

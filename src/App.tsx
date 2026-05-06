@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -10,8 +11,14 @@ import Create from "./pages/Create";
 import Join from "./pages/Join";
 import Room from "./pages/Room";
 import NotFound from "./pages/NotFound";
+import Wardrobe from "./pages/Wardrobe";
+import Shop from "./pages/Shop";
 
 import CustomCursor from "@/components/CustomCursor";
+import { GemGainAnimation } from "@/components/ArtGem";
+import { CrateDrop } from "@/components/CrateDrop";
+import { toast } from "sonner";
+import { loadProfile, saveProfile } from "@/lib/avatar";
 
 const queryClient = new QueryClient();
 
@@ -38,23 +45,71 @@ function AnimatedRoutes() {
         <Route path="/join/:code" element={<PageWrap><Join /></PageWrap>} />
         <Route path="/room/:code" element={<PageWrap><Room /></PageWrap>} />
         <Route path="/room/:code/game" element={<PageWrap><Room /></PageWrap>} />
+        <Route path="/wardrobe" element={<PageWrap><Wardrobe /></PageWrap>} />
+        <Route path="/shop" element={<PageWrap><Shop /></PageWrap>} />
         <Route path="*" element={<PageWrap><NotFound /></PageWrap>} />
       </Routes>
     </AnimatePresence>
   );
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <CustomCursor />
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AnimatedRoutes />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+declare global {
+  interface Window {
+    testGems: (amount?: number) => void;
+    testCrate: () => void;
+  }
+}
+
+const App = () => {
+  const [rewardAmount, setRewardAmount] = useState<number | null>(null);
+  const [showCrate, setShowCrate] = useState(false);
+
+  useEffect(() => {
+    window.testGems = (amount = 50) => {
+      setRewardAmount(amount);
+      setTimeout(() => setRewardAmount(null), 3000);
+    };
+
+    window.testCrate = () => {
+      setShowCrate(true);
+    };
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AnimatePresence>
+          {rewardAmount !== null && (
+            <GemGainAnimation amount={rewardAmount} onComplete={() => setRewardAmount(null)} />
+          )}
+          {showCrate && (
+            <CrateDrop onComplete={(reward) => {
+              setShowCrate(false);
+              const p = loadProfile();
+              if (p) {
+                if (reward.type === "gems") {
+                  p.credits += reward.amount;
+                  window.testGems(reward.amount);
+                } else if (reward.type === "hat") {
+                  if (!p.unlockedHats.includes(reward.id)) {
+                    p.unlockedHats.push(reward.id);
+                  }
+                  toast.success(`New Hat: ${reward.label}!`);
+                }
+                saveProfile(p);
+              }
+            }} />
+          )}
+        </AnimatePresence>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <CustomCursor />
+          <AnimatedRoutes />
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

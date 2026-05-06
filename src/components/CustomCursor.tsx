@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { motion, useSpring, useMotionValue } from "framer-motion";
+import { motion, useSpring, useMotionValue, useScroll, useTransform } from "framer-motion";
+import { useLocation } from "react-router-dom";
 import { Pencil } from "lucide-react";
 
 export default function CustomCursor() {
@@ -14,6 +15,35 @@ export default function CustomCursor() {
   const springConfig = { damping: 35, stiffness: 750, mass: 0.1 };
   const cursorX = useSpring(mouseX, springConfig);
   const cursorY = useSpring(mouseY, springConfig);
+
+  const location = useLocation();
+  const isLanding = location.pathname === "/";
+  const { scrollYProgress } = useScroll();
+  
+  const landingColor = useTransform(
+    scrollYProgress,
+    [0, 0.4, 0.8, 1],
+    ["#E8FF47", "#48DBFB", "#A29BFE", "#A29BFE"]
+  );
+  const landingGlowColor = useTransform(
+    scrollYProgress,
+    [0, 0.4, 0.8, 1],
+    ["rgba(232, 255, 71, 0.2)", "rgba(72, 219, 251, 0.2)", "rgba(162, 155, 254, 0.2)", "rgba(162, 155, 254, 0.2)"]
+  );
+
+  const [currentColor, setCurrentColor] = useState("#E8FF47");
+  const [currentGlow, setCurrentGlow] = useState("rgba(232, 255, 71, 0.2)");
+
+  useEffect(() => {
+    if (!isLanding) {
+      setCurrentColor("#E8FF47");
+      setCurrentGlow("rgba(232, 255, 71, 0.2)");
+      return;
+    }
+    const unsubColor = landingColor.onChange((v) => setCurrentColor(v));
+    const unsubGlow = landingGlowColor.onChange((v) => setCurrentGlow(v));
+    return () => { unsubColor(); unsubGlow(); };
+  }, [isLanding, landingColor, landingGlowColor]);
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
@@ -76,7 +106,7 @@ export default function CustomCursor() {
           animate={{
             scale: isHovering ? 2.5 : 1,
             opacity: isClicking ? 0.8 : 0.4,
-            backgroundColor: isHoveringPrimary ? "rgba(255, 255, 255, 0.2)" : "rgba(232, 255, 71, 0.2)",
+            backgroundColor: isHoveringPrimary ? "rgba(255, 255, 255, 0.2)" : currentGlow,
           }}
           className="w-12 h-12 rounded-full blur-xl transition-colors duration-300"
         />
@@ -97,15 +127,16 @@ export default function CustomCursor() {
           animate={{
             rotate: isClicking ? -15 : isHovering ? -20 : -35,
             scale: isClicking ? 0.85 : isHovering ? 1.1 : 1,
-            color: isHoveringPrimary ? "#FFFFFF" : "#E8FF47",
+            color: isHoveringPrimary ? "#FFFFFF" : currentColor,
           }}
           transition={{ type: "spring", damping: 15, stiffness: 400 }}
-          className="relative drop-shadow-[0_0_8px_rgba(232,255,71,0.4)] transition-colors duration-300"
+          style={{ filter: `drop-shadow(0 0 8px ${currentGlow.replace("0.2", "0.4")})` }}
+          className="relative transition-colors duration-300"
         >
           <Pencil 
             size={24} 
             strokeWidth={3}
-            fill={isHovering ? "currentColor" : "rgba(232,255,71,0.1)"}
+            fill={isHovering ? "currentColor" : currentGlow}
           />
         </motion.div>
       </motion.div>
