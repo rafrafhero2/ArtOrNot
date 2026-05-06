@@ -86,6 +86,7 @@ export async function createRoom(code: string, host: PlayerDoc) {
     currentRound: 0,
     currentTurnIndex: 0,
     turnOrder: [],
+    countdown: null,
     createdAt: serverTimestamp(),
   } as Partial<RoomDoc>);
   await setDoc(playerRef(codeU, u.uid), { ...host, uid: u.uid, isHost: true, joinedAt: serverTimestamp() });
@@ -285,6 +286,7 @@ export async function backToLobby(code: string) {
     accusedUID: null,
     fakeGuess: null,
     winner: null,
+    countdown: null,
   });
 }
 

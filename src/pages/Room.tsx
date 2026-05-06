@@ -110,7 +110,7 @@ function Lobby({ code, room, players, uid, isHost }: { code: string; room: RoomD
   };
 
   useEffect(() => {
-    if (!isHost || room.countdown === null) return;
+    if (!isHost || typeof room.countdown !== "number") return;
     if (room.countdown === 0) {
       startGame(code, players, settings);
       updateCountdown(code, null);
