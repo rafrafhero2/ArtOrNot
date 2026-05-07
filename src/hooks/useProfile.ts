@@ -33,7 +33,11 @@ export function useProfile() {
     setProfileState(newProfile);
     saveProfile(newProfile);
     if (user && !user.isAnonymous) {
-      await saveCloudProfile(user.uid, newProfile);
+      try {
+        await saveCloudProfile(user.uid, newProfile);
+      } catch (err) {
+        console.error("Failed to sync profile to cloud:", err);
+      }
     }
   };
 

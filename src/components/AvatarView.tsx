@@ -11,6 +11,7 @@ type Props = {
 };
 
 export default function AvatarView({ avatar, size = 56, ring, ringColor, className }: Props) {
+  if (!avatar) return null;
   const hat = AVATAR_HATS.find((h) => h.id === avatar.hat) ?? AVATAR_HATS[0];
   const Character = CHARACTER_MAP[avatar.characterId] || CHARACTER_MAP.bunny;
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { Dice5, Check, Lock, RefreshCw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Dice5, Check, Lock, RefreshCw, Loader2 } from "lucide-react";
 import AvatarView from "@/components/AvatarView";
 import { ArtGem } from "./ArtGem";
 import {
@@ -28,13 +28,22 @@ export default function AvatarCustomizer({ profile, updateProfile, onSave, compa
   
   const tabs = ["Color", "Body", "Accent", "Eyes", "Face", "Hat"] as const;
   const [tab, setTab] = useState<(typeof tabs)[number]>("Color");
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   const valid = useMemo(() => nickname.trim().length >= 2 && nickname.length <= 16, [nickname]);
 
   const save = async () => {
-    if (!valid) return;
+    if (!valid || isSaving || isSaved) return;
+    setIsSaving(true);
     await updateProfile({ ...profile, nickname: nickname.trim(), avatar });
-    if (onSave) onSave();
+    setIsSaving(false);
+    setIsSaved(true);
+    
+    // Show saved animation for 1 second then redirect
+    setTimeout(() => {
+      if (onSave) onSave();
+    }, 1000);
   };
 
   const buyItem = (type: "HAT" | "COLOR" | "FACE", idOrColor: string) => {
@@ -196,10 +205,36 @@ export default function AvatarCustomizer({ profile, updateProfile, onSave, compa
         </button>
         <button 
           onClick={save} 
-          disabled={!valid} 
-          className="btn-primary py-2 px-6 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-xl"
+          disabled={!valid || isSaving || isSaved} 
+          className={`btn-primary py-2 px-6 text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-xl relative overflow-hidden min-w-[140px] ${isSaved ? "bg-green-500 border-green-600 hover:bg-green-500" : ""}`}
         >
-          <Check size={16} className="inline -mt-0.5 mr-2" /> Save Changes
+          <AnimatePresence mode="wait">
+            {isSaving ? (
+              <motion.div
+                key="saving"
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                className="flex items-center justify-center gap-2"
+              >
+                <Loader2 size={16} className="animate-spin" /> Saving...
+              </motion.div>
+            ) : isSaved ? (
+              <motion.div
+                key="saved"
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                className="flex items-center justify-center gap-2"
+              >
+                <Check size={16} /> Saved!
+              </motion.div>
+            ) : (
+              <motion.div
+                key="save"
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                className="flex items-center justify-center gap-2"
+              >
+                <Check size={16} /> Save Changes
+              </motion.div>
+            )}
+          </AnimatePresence>
         </button>
       </div>
     </div>

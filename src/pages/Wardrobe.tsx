@@ -25,8 +25,16 @@ const itemVariants = {
 
 export default function Wardrobe() {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<Profile | null>(loadProfile());
-  const [selectedHat, setSelectedHat] = useState(profile?.avatar.hat || "");
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [selectedHat, setSelectedHat] = useState("");
+
+  useEffect(() => {
+    const p = loadProfile();
+    if (p) {
+      setProfile(p);
+      setSelectedHat(p.avatar.hat || "");
+    }
+  }, []);
 
   useEffect(() => {
     const lenis = new Lenis({
@@ -166,14 +174,14 @@ export default function Wardrobe() {
               <div>
                 <h2 className="font-display text-4xl font-black italic tracking-tight uppercase mb-2">My Collection</h2>
                 <p className="text-muted-foreground text-sm flex items-center gap-2">
-                   <User size={14} /> Unlocked {profile?.unlockedHats.length} / {AVATAR_HATS.length} items
+                   <User size={14} /> Unlocked {profile?.unlockedHats?.length || 0} / {AVATAR_HATS.length} items
                 </p>
               </div>
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
               {AVATAR_HATS.map((hat, i) => {
-                const isUnlocked = profile?.unlockedHats.includes(hat.id);
+                const isUnlocked = profile?.unlockedHats?.includes(hat.id);
                 const isSelected = selectedHat === hat.id;
                 const isSecret = hat.rarity === "Secret";
 
