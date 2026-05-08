@@ -27,10 +27,10 @@ export default function Join() {
   const code = chars.join("");
 
   useEffect(() => {
-    if (profile && codeParam && code.length === 4) {
+    if (profile && codeParam && code.length === 4 && !busy) {
       attempt(code);
     }
-  }, [profile]);
+  }, [profile?.nickname, profile?.avatar.characterId, profile?.avatar.bgColor, codeParam, code]);
 
   if (!profile) return null;
 

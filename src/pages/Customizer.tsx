@@ -22,7 +22,7 @@ const ease = [0.16, 1, 0.3, 1] as const;
 export default function Customizer() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const next = params.get("next") || "/create";
+  const next = params.get("next") || "/";
   
   const { profile, updateProfile, loading, user } = useProfile();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -64,7 +64,7 @@ export default function Customizer() {
           <AvatarCustomizer 
             profile={profile} 
             updateProfile={updateProfile} 
-            onSave={() => navigate("/")}
+            onSave={() => navigate(next)}
           />
         </motion.div>
       </div>

@@ -66,17 +66,30 @@ onAuthStateChanged(auth, (u) => {
   }
 });
 
+let authPromise: Promise<User> | null = null;
+
 export async function ensureAuth(): Promise<User> {
   if (currentUser) return currentUser;
-  if (auth.currentUser) { currentUser = auth.currentUser; return currentUser; }
-  return new Promise((resolve) => {
+  if (auth.currentUser) { 
+    currentUser = auth.currentUser; 
+    return currentUser; 
+  }
+  if (authPromise) return authPromise;
+
+  authPromise = new Promise((resolve, reject) => {
     const unsub = onAuthStateChanged(auth, (u) => {
       if (u) {
         unsub();
+        authPromise = null;
+        currentUser = u;
         resolve(u);
       } else {
-        signInAnonymously(auth).catch(console.error);
+        signInAnonymously(auth).catch((err) => {
+          authPromise = null;
+          reject(err);
+        });
       }
     });
   });
+  return authPromise;
 }

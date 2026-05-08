@@ -385,27 +385,109 @@ function FeatureCard({
 }
 
 function AvatarPreview() {
-  const characters = ["bunny", "panda", "fox", "frog", "devil"];
-  const bgColors = ["#FF6B6B", "#FECA57", "#48DBFB", "#A29BFE", "#55EFC4"];
-  const bodyColors = ["#FFFFFF", "#0D0D0D", "#FFD93D", "#6BCB77", "#A29BFE"];
+  const characters = ["bunny", "panda", "fox", "frog", "devil", "robot", "ghost"];
+  const bgColors = ["#FF6B6B", "#FECA57", "#48DBFB", "#A29BFE", "#55EFC4", "#FF9F43", "#C7FF6B"];
+  const bodyColors = ["#FFFFFF", "#0D0D0D", "#FFD93D", "#6BCB77", "#A29BFE", "#FD79A8", "#48DBFB"];
+  const hats = ["", "party", "crown", "chef", "halo", "headphones", "cap"];
+
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStep((s) => (s + 1) % 6);
+    }, 1500);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Indices for parts based on step
+  const charIdx = step % characters.length;
+  const bgIdx = (step + 2) % bgColors.length;
+  const bodyIdx = (step + 4) % bodyColors.length;
+  const hatIdx = step % hats.length;
+
+  const currentLabel = ["Face", "Color", "Body", "Hat", "Style", "Ready!"][step];
+  const Character = CHARACTER_MAP[characters[charIdx]] || CHARACTER_MAP.bunny;
 
   return (
-    <div className="flex gap-3">
-      {characters.map((charId, i) => {
-        const Character = CHARACTER_MAP[charId] || CHARACTER_MAP.bunny;
-        return (
+    <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-white/5 to-white/[0.02]">
+      {/* Background Pulse */}
+      <motion.div 
+        key={`bg-${bgIdx}`}
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1.2, opacity: 0.15 }}
+        className="absolute w-40 h-40 rounded-full blur-3xl"
+        style={{ backgroundColor: bgColors[bgIdx] }}
+      />
+
+      <div className="relative flex flex-col items-center">
+        {/* Floating Label */}
+        <AnimatePresence mode="wait">
           <motion.div
-            key={i}
-            className="w-12 h-12 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: bgColors[i] }}
-            initial={{ y: 20, opacity: 0 }}
+            key={currentLabel}
+            initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: i * 0.1 }}
+            exit={{ y: -10, opacity: 0 }}
+            className="absolute -top-8 px-3 py-1 bg-primary text-[#0D0D0D] rounded-full text-[10px] font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(232,255,71,0.4)] z-20"
           >
-            <Character size={32} color={bodyColors[i]} />
+            {currentLabel}
           </motion.div>
-        );
-      })}
+        </AnimatePresence>
+
+        {/* The Avatar */}
+        <motion.div
+          animate={{ 
+            scale: [1, 1.05, 1],
+            rotate: [0, step % 2 === 0 ? 2 : -2, 0]
+          }}
+          transition={{ duration: 0.5 }}
+          className="relative w-24 h-24 rounded-3xl flex items-center justify-center border-2 border-white/10 shadow-2xl overflow-hidden"
+          style={{ backgroundColor: bgColors[bgIdx] }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${characters[charIdx]}-${bodyColors[bodyIdx]}`}
+              initial={{ scale: 0.5, opacity: 0, rotate: -20 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              exit={{ scale: 1.5, opacity: 0, rotate: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              <Character size={64} color={bodyColors[bodyIdx]} />
+            </motion.div>
+          </AnimatePresence>
+          
+          {/* Hat Layer */}
+          <AnimatePresence>
+            {hats[hatIdx] && (
+              <motion.div
+                key={hats[hatIdx]}
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -40, opacity: 0 }}
+                className="absolute inset-0 pointer-events-none"
+              >
+                {/* Simplified Hat view or SVG */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-12 opacity-80">
+                   {/* We can use the hat SVG from AVATAR_HATS if we want, but let's keep it simple for now or import it */}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* UI Dots */}
+        <div className="mt-6 flex gap-1.5">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <motion.div
+              key={i}
+              animate={{ 
+                scale: step === i ? 1.5 : 1,
+                backgroundColor: step === i ? "#E8FF47" : "rgba(255,255,255,0.2)"
+              }}
+              className="w-1.5 h-1.5 rounded-full"
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -472,40 +554,67 @@ function CanvasPreview() {
 }
 
 function ChatPreview() {
-  const messages = [
-    { name: "SpicyPelican", text: "Definitely a cat \uD83D\uDC31", color: "#FF6B6B" },
+  const allMessages = [
+    { name: "SpicyPelican", text: "Definitely a cat 🐱", color: "#FF6B6B" },
     { name: "NoodleWitch", text: "hmm idk about that...", color: "#48DBFB" },
-    { name: "CosmicOtter", text: "Player 3 is sus \uD83D\uDC40", color: "#FECA57" },
+    { name: "CosmicOtter", text: "Player 3 is sus 👀", color: "#FECA57" },
     { name: "PixelNinja", text: "wait what are we drawing?", color: "#A29BFE" },
     { name: "TurboMango", text: "LMAO nice try", color: "#55EFC4" },
   ];
 
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setVisibleCount((prev) => (prev >= allMessages.length ? 0 : prev + 1));
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [allMessages.length]);
+
   return (
-    <div className="w-full h-full p-3 flex flex-col gap-2 overflow-hidden">
-      {messages.map((msg, i) => (
-        <motion.div
-          key={i}
-          className="flex items-start gap-2 text-xs"
-          animate={{ y: [20, 0], opacity: [0, 1] }}
-          transition={{
-            duration: 0.5,
-            delay: i * 0.8,
-            repeat: Infinity,
-            repeatDelay: messages.length * 0.8,
-          }}
+    <div className="w-full h-full p-4 flex flex-col justify-end gap-3 overflow-hidden bg-black/20">
+      <AnimatePresence mode="popLayout">
+        {allMessages.slice(0, visibleCount).map((msg, i) => (
+          <motion.div
+            key={`${i}-${visibleCount === 0}`} // Reset keys on restart
+            layout
+            initial={{ opacity: 0, x: -20, scale: 0.8 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ 
+              type: "spring", 
+              stiffness: 400, 
+              damping: 30,
+              opacity: { duration: 0.2 }
+            }}
+            className="flex items-start gap-3 text-xs"
+          >
+            <div
+              className="w-6 h-6 rounded-full flex-shrink-0 border border-white/10 shadow-sm"
+              style={{ backgroundColor: msg.color }}
+            />
+            <div className="bg-white/5 border border-white/5 rounded-2xl rounded-tl-none px-3 py-2 max-w-[80%]">
+              <span className="block font-mono text-[10px] font-bold mb-0.5" style={{ color: msg.color }}>
+                {msg.name}
+              </span>
+              <p className="text-white/80 leading-snug">{msg.text}</p>
+            </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+      
+      {/* Skeleton for "typing" effect when empty or transitioning */}
+      {visibleCount < allMessages.length && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex gap-1 px-4 py-2"
         >
-          <div
-            className="w-5 h-5 rounded-full flex-shrink-0"
-            style={{ backgroundColor: msg.color }}
-          />
-          <div>
-            <span className="font-mono text-[10px]" style={{ color: msg.color }}>
-              {msg.name}
-            </span>
-            <p className="text-[#888880]">{msg.text}</p>
-          </div>
+          <div className="w-1.5 h-1.5 rounded-full bg-white/20 animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-1.5 h-1.5 rounded-full bg-white/20 animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-1.5 h-1.5 rounded-full bg-white/20 animate-bounce" style={{ animationDelay: '300ms' }} />
         </motion.div>
-      ))}
+      )}
     </div>
   );
 }
