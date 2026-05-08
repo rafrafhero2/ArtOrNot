@@ -29,7 +29,7 @@ const brushStroke: Variants = {
   visible: {
     pathLength: 1,
     opacity: 1,
-    transition: { 
+    transition: {
       pathLength: { duration: 1.5, delay: 0.8, ease: "easeInOut" },
       opacity: { duration: 0.4, delay: 0.8 }
     }
@@ -78,8 +78,8 @@ function Hero() {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden py-20">
-      <ThemeBackground 
-        bgHue="#0A0F0A" 
+      <ThemeBackground
+        bgHue="#0A0F0A"
         glowColor="rgba(232, 255, 71, 0.2)"
         colors={["rgba(232, 255, 71, 0.3)", "rgba(255, 255, 255, 0.1)"]}
       />
@@ -212,7 +212,7 @@ const STEPS = [
 function StepCard({ step, i, scrollProgress }: { step: typeof STEPS[0], i: number, scrollProgress: any }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, margin: "-10% 0% -10% 0%" });
-  
+
   const borderRadius = useTransform(scrollProgress, [0.1 * i, 0.2 * i + 0.2], ["24px", "48px"]);
   const rotate = useTransform(scrollProgress, [0.1 * i, 0.2 * i + 0.2], [0, i % 2 === 0 ? 1 : -1]);
 
@@ -255,38 +255,38 @@ function HowItWorks() {
       className="relative py-32 overflow-hidden"
       id="how-it-works"
     >
-      <ThemeBackground 
-        bgHue="#050C12" 
+      <ThemeBackground
+        bgHue="#050C12"
         glowColor="rgba(72, 219, 251, 0.15)"
         colors={["rgba(72, 219, 251, 0.3)", "rgba(255, 255, 255, 0.1)"]}
       />
       <div className="relative z-10 px-6 max-w-6xl mx-auto">
         <motion.div
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-100px" }}
-        variants={stagger}
-      >
-        <motion.h2
-          custom={0}
-          variants={fadeUp}
-          className="font-heading text-4xl md:text-5xl font-bold text-center mb-4"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={stagger}
         >
-          How it works
-        </motion.h2>
-        <motion.p
-          custom={1}
-          variants={fadeUp}
-          className="text-[#888880] text-center mb-16 text-lg"
-        >
-          Four steps. Infinite suspicion.
-        </motion.p>
+          <motion.h2
+            custom={0}
+            variants={fadeUp}
+            className="font-heading text-4xl md:text-5xl font-bold text-center mb-4"
+          >
+            How it works
+          </motion.h2>
+          <motion.p
+            custom={1}
+            variants={fadeUp}
+            className="text-[#888880] text-center mb-16 text-lg"
+          >
+            Four steps. Infinite suspicion.
+          </motion.p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {STEPS.map((step, i) => (
-            <StepCard key={step.num} step={step} i={i} scrollProgress={scrollYProgress} />
-          ))}
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {STEPS.map((step, i) => (
+              <StepCard key={step.num} step={step} i={i} scrollProgress={scrollYProgress} />
+            ))}
+          </div>
         </motion.div>
       </div>
     </section>
@@ -362,7 +362,7 @@ function FeatureCard({
         style={{ transformStyle: "preserve-3d", rotateX, rotateY, willChange: "transform" }}
       >
         {/* Feature preview area */}
-        <div 
+        <div
           className="w-full h-56 rounded-2xl bg-card border border-white/[0.04] mb-8 flex items-center justify-center overflow-hidden relative shadow-inner"
           style={{ transform: "translateZ(30px)" }}
         >
@@ -376,7 +376,7 @@ function FeatureCard({
         </div>
         <h3 className="font-heading text-2xl font-bold mb-4" style={{ transform: "translateZ(40px)" }}>{feature.title}</h3>
         <p className="text-[#888880] text-lg leading-relaxed" style={{ transform: "translateZ(20px)" }}>{feature.desc}</p>
-        
+
         {/* Hover glow */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[radial-gradient(circle_at_50%_100%,rgba(162,155,254,0.08)_0%,transparent_70%)]" />
       </motion.div>
@@ -411,7 +411,7 @@ function AvatarPreview() {
   return (
     <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-white/5 to-white/[0.02]">
       {/* Background Pulse */}
-      <motion.div 
+      <motion.div
         key={`bg-${bgIdx}`}
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1.2, opacity: 0.15 }}
@@ -435,7 +435,7 @@ function AvatarPreview() {
 
         {/* The Avatar */}
         <motion.div
-          animate={{ 
+          animate={{
             scale: [1, 1.05, 1],
             rotate: [0, step % 2 === 0 ? 2 : -2, 0]
           }}
@@ -454,7 +454,7 @@ function AvatarPreview() {
               <Character size={64} color={bodyColors[bodyIdx]} />
             </motion.div>
           </AnimatePresence>
-          
+
           {/* Hat Layer */}
           <AnimatePresence>
             {hats[hatIdx] && (
@@ -467,7 +467,7 @@ function AvatarPreview() {
               >
                 {/* Simplified Hat view or SVG */}
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-12 opacity-80">
-                   {/* We can use the hat SVG from AVATAR_HATS if we want, but let's keep it simple for now or import it */}
+                  {/* We can use the hat SVG from AVATAR_HATS if we want, but let's keep it simple for now or import it */}
                 </div>
               </motion.div>
             )}
@@ -479,7 +479,7 @@ function AvatarPreview() {
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <motion.div
               key={i}
-              animate={{ 
+              animate={{
                 scale: step === i ? 1.5 : 1,
                 backgroundColor: step === i ? "#E8FF47" : "rgba(255,255,255,0.2)"
               }}
@@ -581,9 +581,9 @@ function ChatPreview() {
             initial={{ opacity: 0, x: -20, scale: 0.8 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ 
-              type: "spring", 
-              stiffness: 400, 
+            transition={{
+              type: "spring",
+              stiffness: 400,
               damping: 30,
               opacity: { duration: 0.2 }
             }}
@@ -602,10 +602,10 @@ function ChatPreview() {
           </motion.div>
         ))}
       </AnimatePresence>
-      
+
       {/* Skeleton for "typing" effect when empty or transitioning */}
       {visibleCount < allMessages.length && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="flex gap-1 px-4 py-2"
@@ -622,26 +622,26 @@ function ChatPreview() {
 function Features() {
   return (
     <section className="relative py-32 overflow-hidden" id="features">
-      <ThemeBackground 
-        bgHue="#0A0512" 
+      <ThemeBackground
+        bgHue="#0A0512"
         glowColor="rgba(162, 155, 254, 0.15)"
         colors={["rgba(162, 155, 254, 0.3)", "rgba(255, 107, 107, 0.2)"]}
       />
       <div className="relative z-10 px-6 max-w-6xl mx-auto">
         <div className="text-center mb-16">
-        <h2 className="font-heading text-4xl md:text-5xl font-bold mb-4">
-          Built for <span className="text-[#E8FF47]">fun</span>
-        </h2>
-        <p className="text-[#888880] text-lg">
-          Every detail designed to make your game night unforgettable.
-        </p>
-      </div>
+          <h2 className="font-heading text-4xl md:text-5xl font-bold mb-4">
+            Built for <span className="text-[#E8FF47]">fun</span>
+          </h2>
+          <p className="text-[#888880] text-lg">
+            Every detail designed to make your game night unforgettable.
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {FEATURES.map((feature, i) => (
-          <FeatureCard key={feature.title} feature={feature} index={i} />
-        ))}
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {FEATURES.map((feature, i) => (
+            <FeatureCard key={feature.title} feature={feature} index={i} />
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -677,17 +677,17 @@ function Footer() {
 
 function GradientDivider({ fromHue, toHue, glowColor }: { fromHue: string, toHue: string, glowColor: string }) {
   return (
-    <div 
+    <div
       className="w-full relative flex items-center justify-center py-16 overflow-hidden"
       style={{ background: `linear-gradient(to bottom, ${fromHue}, ${toHue})` }}
     >
       <div className="absolute w-[80%] max-w-3xl h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-      <div 
-        className="absolute w-[40%] max-w-lg h-[2px] bg-gradient-to-r from-transparent to-transparent animate-glow-pulse" 
+      <div
+        className="absolute w-[40%] max-w-lg h-[2px] bg-gradient-to-r from-transparent to-transparent animate-glow-pulse"
         style={{ backgroundImage: `linear-gradient(to right, transparent, ${glowColor}, transparent)` }}
       />
-      <div 
-        className="absolute w-[20%] max-w-xs h-[4px] bg-gradient-to-r from-transparent to-transparent blur-[4px]" 
+      <div
+        className="absolute w-[20%] max-w-xs h-[4px] bg-gradient-to-r from-transparent to-transparent blur-[4px]"
         style={{ backgroundImage: `linear-gradient(to right, transparent, ${glowColor}, transparent)` }}
       />
     </div>
@@ -744,8 +744,8 @@ function LandingNavbar() {
                     <ArtGem size={14} />
                     <span className="font-mono text-sm font-bold">{profile.credits}</span>
                   </div>
-                  <button 
-                    onClick={() => logout()} 
+                  <button
+                    onClick={() => logout()}
                     className="flex items-center gap-2 text-sm font-medium text-[#888880] hover:text-white transition-colors"
                   >
                     <LucideIcons.LogOut size={16} />
@@ -753,7 +753,7 @@ function LandingNavbar() {
                   </button>
                 </div>
               ) : (
-                <button 
+                <button
                   onClick={() => setIsAuthOpen(true)}
                   className="flex items-center gap-2 bg-white text-[#0D0D0D] px-5 py-2 rounded-full font-bold text-sm hover:bg-primary transition-all active:scale-95 shadow-lg"
                 >
@@ -775,9 +775,35 @@ function LandingNavbar() {
 
 function GlobalBrushStrokes() {
   const { scrollYProgress } = useScroll();
-  
-  // Color interpolation based on scroll progress
-  // Hero (0) -> HowItWorks (0.4) -> Features (0.8)
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    
+    const init = async () => {
+      // Wait for all fonts to load to prevent layout shifts
+      if (document.fonts) await document.fonts.ready;
+      
+      // Add a small safety buffer for Lenis and scroll physics to initialize
+      setTimeout(() => {
+        if (mounted) setIsReady(true);
+      }, 300);
+    };
+
+    if (document.readyState === 'complete') {
+      init();
+    } else {
+      window.addEventListener('load', init);
+      // Fallback
+      setTimeout(init, 1500);
+    }
+    
+    return () => {
+      mounted = false;
+      window.removeEventListener('load', init);
+    };
+  }, []);
+
   const strokeColor = useTransform(
     scrollYProgress,
     [0, 0.4, 0.8, 1],
@@ -787,12 +813,20 @@ function GlobalBrushStrokes() {
   const y1 = useTransform(scrollYProgress, [0, 1], [0, -400]);
   const y2 = useTransform(scrollYProgress, [0, 1], [100, -600]);
   const y3 = useTransform(scrollYProgress, [0, 1], [200, -300]);
-  
+
   const r1 = useTransform(scrollYProgress, [0, 1], [-10, 25]);
   const r2 = useTransform(scrollYProgress, [0, 1], [15, -20]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[5] overflow-hidden">
+    <div
+      style={{
+        opacity: isReady ? 1 : 0,
+        filter: isReady ? "blur(0px)" : "blur(30px)",
+        transition: "opacity 0.6s ease-out, filter 0.6s ease-out",
+        pointerEvents: "none"
+      }}
+      className="fixed inset-0 z-[5] overflow-hidden"
+    >
       {/* Top Left Stroke */}
       <motion.svg
         style={{ y: y1, rotate: r1, opacity: 0.15 }}
@@ -822,7 +856,7 @@ function GlobalBrushStrokes() {
           strokeLinecap="round"
         />
       </motion.svg>
-      
+
       {/* Bottom Left Stroke */}
       <motion.svg
         style={{ y: y3, rotate: r1, opacity: 0.1 }}
@@ -872,16 +906,16 @@ export default function Landing() {
     <main className="min-h-screen bg-background relative selection:bg-primary/30 selection:text-white">
       <LandingNavbar />
       <GlobalBrushStrokes />
-      
+
       <Hero />
       <GradientDivider fromHue="#0A0F0A" toHue="#050C12" glowColor="rgba(72,219,251,0.8)" />
-      
+
       <HowItWorks />
       <GradientDivider fromHue="#050C12" toHue="#0A0512" glowColor="rgba(162,155,254,0.8)" />
-      
+
       <Features />
       <GradientDivider fromHue="#0A0512" toHue="#0A0F0A" glowColor="rgba(232,255,71,0.5)" />
-      
+
       <div className="bg-[#0A0F0A]">
         <Footer />
       </div>
